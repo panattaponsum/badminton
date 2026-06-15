@@ -122,13 +122,14 @@
     <script>
         const LIFF_ID = '2010400559-X4eBS5zg'; 
         
-        // 🚨 นำชุด Config ได้จากหน้าเว็บ Firebase Console -> Project Settings ด้านล่างสุดมาวางแทนที่ตรงนี้ครับ
+        // 🚨 เอาโค้ด firebaseConfig ของจริงของคุณ มาวางทับตรงนี้นะครับ! ไม่งั้นเว็บโหลดไม่ขึ้น
         const firebaseConfig = {
-            apiKey: "AIzaSyA...",
-            authDomain: "bokbak-badminton.firebaseapp.com",
-            databaseURL: "https://bokbak-badminton-default-rtdb.firebaseio.com",
-            projectId: "bokbak-badminton",
-            storageBucket: "bokbak-badminton.appspot.com"
+           apiKey: "AIzaSyC1Hl0kB27UqbZZXJdfkWgGimvmWo13rLg",
+  authDomain: "bokbak-badminton.firebaseapp.com",
+  projectId: "bokbak-badminton",
+  storageBucket: "bokbak-badminton.firebasestorage.app",
+  messagingSenderId: "343879156501",
+  appId: "1:343879156501:web:5f3f6d24bbc3928ea8df1c"
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
@@ -162,7 +163,6 @@
             document.getElementById('user-avatar').src = pictureUrl || 'https://cdn-icons-png.flaticon.com/512/1077/1077114.png';
             document.getElementById('user-profile').classList.remove('hidden');
             
-            // เริ่มฟังก์ชันคอยดักฟังฐานข้อมูลสด ๆ ข้ามเครื่องแบบเรียลไทม์
             listenToDatabase();
         }
 
@@ -243,7 +243,7 @@
             }
         }
 
-      async function createNewMatch() {
+        async function createNewMatch() {
             const loc = document.getElementById('input-location').value.trim();
             const dt = document.getElementById('input-date').value; 
             const tm = document.getElementById('input-time').value; 
@@ -265,13 +265,11 @@
                 notified2Hr: false
             };
 
-            // 1. บันทึกข้อมูลลงฐานข้อมูล
             await db.ref('activeMatch').set(matchData);
             await db.ref('registrations').set({
                 [userId]: { id: userId, name: displayName, timestamp: Date.now() }
             });
 
-            // 2. ⚡ ยิงสัญญาณไปที่หลังบ้านด้วยชื่อใหม่ "apiNotifyMatchCreated"
             try {
                 const apiUrl = 'https://us-central1-bokbak-badminton.cloudfunctions.net/apiNotifyMatchCreated';
                 await fetch(apiUrl, {
@@ -285,6 +283,7 @@
 
             alert(`✨ เปิดตี้สำเร็จ! ระบบส่งข้อมูลแจ้งเตือนไปยังกลุ่ม LINE แล้วครับ`);
         }
+
         async function deleteMatch() {
             if (!confirm('คุณแน่ใจไหมที่จะปิดแมตช์นี้และล้างรายชื่อทิ้งทั้งหมด? 🗑️')) return;
             await db.ref('activeMatch').remove();
