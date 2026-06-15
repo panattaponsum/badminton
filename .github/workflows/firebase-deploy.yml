@@ -4,10 +4,13 @@ on:
   push:
     branches:
       - main
-      - master  # รองรับทั้งคนที่ใช้กิ่ง main และ master ไม่ต้องกังวลเรื่องชื่อกิ่งอีกต่อไป
+      - master
 
 permissions:
   contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true  # อัปเดตตามระบบ GitHub 2026
 
 jobs:
   build_and_deploy:
@@ -19,14 +22,14 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 18  # ตัวระบบ Firebase Functions ยังคงต้องการ Node.js 18 ในการรันหลังบ้าน
           cache: 'npm'
           cache-dependency-path: functions/package.json
 
       - name: Install Functions Dependencies
         run: |
           cd functions
-          npm ci || npm install  # บังคับติดตั้ง Library ระบบหลังบ้านให้สมบูรณ์
+          npm install
 
       - name: Deploy to Firebase Hosting & Functions
         uses: w9jds/firebase-action@master
