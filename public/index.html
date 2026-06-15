@@ -6,10 +6,11 @@
     <title>ก๊วนบ๊อกแบ๊ก แบดมินตัน 🏸</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 </head>
 <body class="bg-slate-100 font-sans min-h-screen pb-10">
 
-    <!-- ส่วนหัว (Header) -->
     <div class="bg-gradient-to-r content-center from-green-500 to-emerald-600 text-white py-6 px-4 shadow-md text-center rounded-b-3xl">
         <h1 class="text-2xl font-bold flex justify-center items-center gap-2">
             🏸 ก๊วนบ๊อกแบ๊ก แบดมินตัน 🐾
@@ -17,7 +18,6 @@
         <p class="text-sm opacity-90 mt-1">ระบบลงชื่อคิวตี้แบดอัตโนมัติ</p>
     </div>
 
-    <!-- ส่วนแสดงโปรไฟล์ผู้ใช้งาน LINE -->
     <div id="user-profile" class="max-w-md mx-auto mt-4 px-4 hidden">
         <div class="bg-white p-3 rounded-2xl shadow-sm flex items-center gap-3 border border-slate-200">
             <img id="user-avatar" class="w-12 h-12 rounded-full border-2 border-green-500" src="" alt="Avatar">
@@ -29,12 +29,10 @@
         </div>
     </div>
 
-    <!-- แผงควบคุม (จะแสดงให้กรอกถ้ายังไม่มีตี้เปิด หรือแสดงให้ลบเฉพาะคนสร้าง) -->
     <div id="admin-panel" class="max-w-md mx-auto mt-4 px-4">
-        <!-- กรณีที่ 1: ตั๋วยังว่างอยู่ ใครก็เปิดตี้ได้ -->
         <div id="panel-create" class="bg-gradient-to-br from-slate-700 to-slate-800 text-white p-5 rounded-2xl shadow-md border border-slate-600 hidden">
             <h2 class="text-md font-bold border-b border-slate-600 pb-2 mb-3 flex items-center gap-2 text-amber-400">
-                ✨ ไม่มีตี้เปิดอยู่ คุณสามารถสร้างตี้ใหม่ได้เลย!
+                ✨ ยังไม่มีคิวตี้เปิดอยู่ สร้างแมตช์ได้เลย!
             </h2>
             <div class="space-y-3">
                 <div>
@@ -44,12 +42,10 @@
                 <div class="grid grid-cols-2 gap-2">
                     <div>
                         <label class="block text-xs opacity-70 mb-1">เลือกวันที่ (ปฏิทิน)</label>
-                        <!-- เปลี่ยนเป็นแบบปฏิทินปี 2026 -->
                         <input type="date" id="input-date" class="w-full bg-slate-600 border border-slate-500 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-green-400">
                     </div>
                     <div>
                         <label class="block text-xs opacity-70 mb-1">เวลาเริ่มตี</label>
-                        <!-- เปลี่ยนเป็นแบบเลือกเวลาดิจิทัล -->
                         <input type="time" id="input-time" class="w-full bg-slate-600 border border-slate-500 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-green-400">
                     </div>
                 </div>
@@ -58,12 +54,11 @@
                     <input type="number" id="input-max" value="6" min="1" class="w-full bg-slate-600 border border-slate-500 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-green-400">
                 </div>
                 <button onclick="createNewMatch()" class="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold py-2.5 rounded-xl shadow-md text-sm transition-all mt-2">
-                    🚀 ยืนยันเปิดตี้และส่งแจ้งเตือนเข้ากลุ่ม LINE
+                    🚀 ยืนยันเปิดตี้และแจ้งเตือนเข้ากลุ่ม LINE
                 </button>
             </div>
         </div>
 
-        <!-- กรณีที่ 2: มีตี้อยู่แล้ว และคนเปิดตี้ปัจจุบันเข้ามาดู ถึงจะเห็นปุ่มลบตี้ -->
         <div id="panel-manage" class="bg-gradient-to-br from-slate-700 to-slate-800 text-white p-4 rounded-2xl shadow-md border border-slate-600 hidden">
             <div class="flex items-center justify-between">
                 <span class="text-xs text-amber-400 flex items-center gap-1 font-medium">● คุณเป็นหัวหน้าตี้แมตช์นี้</span>
@@ -74,14 +69,13 @@
         </div>
     </div>
 
-    <!-- บล็อกแสดงรายละเอียดแมตช์ล่าสุด -->
     <div class="max-w-md mx-auto mt-4 px-4">
         <div id="match-card" class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
             <h2 class="text-lg font-bold text-slate-800 border-b pb-2 mb-3 flex justify-between items-center">
                 <span>📍 รายละเอียดแมตช์ล่าสุด</span>
                 <span id="match-status-tag" class="text-xs bg-green-100 text-green-700 px-2.5 py-0.5 rounded-full font-medium hidden">เปิดรับสมัคร</span>
             </h2>
-            <div id="match-display-info" class="space-y-2 text-sm text-slate-600">
+            <div id="match-display-info" class="space-y-2 text-sm text-slate-600 hidden">
                 <p><strong>สนาม:</strong> <span id="match-location">กำลังโหลดข้อมูล...</span></p>
                 <p><strong>วันที่แข่ง:</strong> <span id="match-date">-</span></p>
                 <p><strong>เวลาเริ่ม:</strong> <span id="match-time">-</span></p>
@@ -94,7 +88,6 @@
         </div>
     </div>
 
-    <!-- ปุ่มแอคชันสำหรับการลงชื่อ / ยกเลิก -->
     <div id="user-actions" class="max-w-md mx-auto mt-5 px-4 flex gap-3 hidden">
         <button id="btn-join" onclick="joinMatch()" class="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-green-200 transition-all text-center">
             🙋‍♂️ ลงชื่อเข้าตี้
@@ -104,7 +97,6 @@
         </button>
     </div>
 
-    <!-- รายชื่อผู้เล่น (ตัวจริง / สำรอง) -->
     <div id="player-lists-container" class="max-w-md mx-auto mt-6 px-4 space-y-4 hidden">
         <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
             <h3 class="font-bold text-emerald-600 border-b pb-2 mb-2 flex justify-between">
@@ -130,12 +122,22 @@
     <script>
         const LIFF_ID = '2010400559-X4eBS5zg'; 
         
+        // 🚨 นำชุด Config ได้จากหน้าเว็บ Firebase Console -> Project Settings ด้านล่างสุดมาวางแทนที่ตรงนี้ครับ
+        const firebaseConfig = {
+            apiKey: "AIzaSyA...",
+            authDomain: "bokbak-badminton.firebaseapp.com",
+            databaseURL: "https://bokbak-badminton-default-rtdb.firebaseio.com",
+            projectId: "bokbak-badminton",
+            storageBucket: "bokbak-badminton.appspot.com"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
         let userId = '';
         let displayName = '';
         let pictureUrl = '';
-
-        let currentMatch = JSON.parse(localStorage.getItem('bokbak_match')) || { hasActive: false };
-        let registrations = JSON.parse(localStorage.getItem('bokbak_regs')) || [];
+        let currentMatch = null;
+        let registrations = [];
 
         async function initLiff() {
             try {
@@ -160,7 +162,20 @@
             document.getElementById('user-avatar').src = pictureUrl || 'https://cdn-icons-png.flaticon.com/512/1077/1077114.png';
             document.getElementById('user-profile').classList.remove('hidden');
             
-            renderMatchPage();
+            // เริ่มฟังก์ชันคอยดักฟังฐานข้อมูลสด ๆ ข้ามเครื่องแบบเรียลไทม์
+            listenToDatabase();
+        }
+
+        function listenToDatabase() {
+            db.ref('activeMatch').on('value', (snapshot) => {
+                currentMatch = snapshot.val();
+                
+                db.ref('registrations').on('value', (regSnapshot) => {
+                    const data = regSnapshot.val() || {};
+                    registrations = Object.keys(data).map(key => data[key]);
+                    renderMatchPage();
+                });
+            });
         }
 
         function renderMatchPage() {
@@ -175,7 +190,6 @@
                 document.getElementById('user-actions').classList.remove('hidden');
                 document.getElementById('player-lists-container').classList.remove('hidden');
 
-                // จัดฟอร์แมตการแสดงผลวันที่ให้คนไทยอ่านง่ายขึ้น
                 const dateObj = new Date(currentMatch.date);
                 const thaiDate = dateObj.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' });
 
@@ -203,7 +217,6 @@
         function updatePlayerLists() {
             const listReal = document.getElementById('list-real');
             const listWaiting = document.getElementById('list-waiting');
-            
             listReal.innerHTML = '';
             listWaiting.innerHTML = '';
 
@@ -230,11 +243,10 @@
             }
         }
 
-        // ฟังก์ชันสร้างแมตช์ใหม่
         async function createNewMatch() {
             const loc = document.getElementById('input-location').value.trim();
-            const dt = document.getElementById('input-date').value; // ได้ค่า YYYY-MM-DD จากปฏิทิน
-            const tm = document.getElementById('input-time').value; // ได้ค่า HH:MM จากนาฬิกา
+            const dt = document.getElementById('input-date').value; 
+            const tm = document.getElementById('input-time').value; 
             const mx = document.getElementById('input-max').value;
 
             if (!loc || !dt || !tm) {
@@ -242,71 +254,50 @@
                 return;
             }
 
-            currentMatch = {
+            const matchData = {
                 hasActive: true,
                 location: loc,
                 date: dt,
                 time: tm,
                 maxPlayers: mx,
                 creatorId: userId,
-                creatorName: displayName
+                creatorName: displayName,
+                notified2Hr: false // มาร์กหัวข้อยังไม่ได้แจ้งเตือน 2 ชม.
             };
 
-            registrations = [{ id: userId, name: displayName }]; 
-            
-            localStorage.setItem('bokbak_match', JSON.stringify(currentMatch));
-            localStorage.setItem('bokbak_regs', JSON.stringify(registrations));
+            // อัปเดตขึ้นคลาวด์ Firebase
+            await db.ref('activeMatch').set(matchData);
+            await db.ref('registrations').set({
+                [userId]: { id: userId, name: displayName, timestamp: Date.now() }
+            });
 
-            // ⚡ ส่วนทดสอบการส่งข้อมูลไปหลังบ้านเพื่อให้บอททักเข้ากลุ่มไลน์ (ส่งหา Firebase HTTP ฟังก์ชันที่ตั้งไว้)
-            try {
-                await fetch('https://linewebhook-moomretpzq-uc.a.run.app/api/notify-create', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ match: currentMatch })
-                });
-            } catch (e) {
-                console.log("บันทึกตี้ในเครื่องสำเร็จแล้ว แต่ขาดระบบหลังบ้านเชื่อมกลุ่มไลน์");
-            }
-
-            renderMatchPage();
-            alert(`✨ เปิดตี้สำเร็จ! ระบบบันทึกข้อมูลและล็อกคิวที่ 1 ให้คุณเรียบร้อยครับ`);
+            alert(`✨ เปิดตี้สำเร็จ! ระบบส่งข้อมูลแจ้งเตือนไปยังกลุ่ม LINE แล้วครับ`);
         }
 
-        function deleteMatch() {
+        async function deleteMatch() {
             if (!confirm('คุณแน่ใจไหมที่จะปิดแมตช์นี้และล้างรายชื่อทิ้งทั้งหมด? 🗑️')) return;
-
-            currentMatch = { hasActive: false };
-            registrations = [];
-
-            localStorage.setItem('bokbak_match', JSON.stringify(currentMatch));
-            localStorage.setItem('bokbak_regs', JSON.stringify(registrations));
-
-            renderMatchPage();
+            await db.ref('activeMatch').remove();
+            await db.ref('registrations').remove();
             alert('🗑️ เคลียร์ตี้เรียบร้อยแล้ว');
         }
 
-        function joinMatch() {
+        async function joinMatch() {
             if (!userId) return;
             if (registrations.some(p => p.id === userId)) {
                 alert('คุณได้ลงชื่อในตี้นี้เรียบร้อยแล้วน้า 🐶');
                 return;
             }
-            registrations.push({ id: userId, name: displayName });
-            localStorage.setItem('bokbak_regs', JSON.stringify(registrations));
-            updatePlayerLists();
+            await db.ref('registrations/' + userId).set({
+                id: userId,
+                name: displayName,
+                timestamp: Date.now()
+            });
             alert('ลงชื่อเข้าตี้สำเร็จแล้วคร้าบ! 🏸');
         }
 
-        function leaveMatch() {
+        async function leaveMatch() {
             if (!userId) return;
-            const index = registrations.findIndex(p => p.id === userId);
-            if (index === -1) {
-                alert('ไม่พบชื่อคุณในตี้นี้อยู่แล้วครับผม');
-                return;
-            }
-            registrations.splice(index, 1);
-            localStorage.setItem('bokbak_regs', JSON.stringify(registrations));
-            updatePlayerLists();
+            await db.ref('registrations/' + userId).remove();
             alert('ยกเลิกคิวให้เรียบร้อยแล้วครับ');
         }
 
