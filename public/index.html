@@ -101,7 +101,7 @@
                     <p class="text-xs text-amber-300">หารเฉลี่ยสมาชิกตี้จริง: <span id="calc-preview-split" class="font-bold text-lg">0</span> บาท/คน</p>
                 </div>
                 <div>
-                    <label class="block text-xs text-yellow-400 mb-0.5">✍️ หัวตี้ปรับแก้ยอดเงินสุทธิรวมได้ที่นี่ (กรณีมีส่วนลด/เศษปัดราคาทิ้ง):</label>
+                    <label class="block text-xs text-yellow-400 mb-0.5">✍️ หัวตี้ปรับแก้ยอดเงินสุทธิรวมได้ที่นี่ (ถ้าต้องการ):</label>
                     <input type="number" id="bill-final-custom" placeholder="ปล่อยว่างไว้หากต้องการใช้ยอดคำนวณปกติ" class="w-full bg-slate-700 border border-yellow-500 rounded p-1.5 text-sm text-yellow-300 font-bold">
                 </div>
                 <button onclick="triggerBillingSubmit()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 rounded text-xs transition-colors shadow">📢 ยืนยันและส่งบิลเรียกเก็บเงินเข้ากลุ่ม LINE</button>
@@ -208,7 +208,6 @@
             document.getElementById('user-avatar').src = pictureUrl || 'https://cdn-icons-png.flaticon.com/512/1077/1077114.png';
             document.getElementById('user-profile').classList.remove('hidden');
             
-            // อ่านดึงข้อมูลแมตช์แชร์เฉพาะทาง URL parameter (เช่น ?matchId=-Nxxx)
             const urlParams = new URLSearchParams(window.location.search);
             if(urlParams.get('matchId')) { 
                 selectedMatchId = urlParams.get('matchId'); 
@@ -217,7 +216,6 @@
             listenGlobalDatabase();
         }
 
-        // เชื่อมโยงระบุตัวตรวจจับการคำนวณราคาแบบ Realtime ของฝั่งหน้าบ้าน
         function setupLiveBillingCalculators() {
             const inputs = ['bill-court-rate', 'bill-hours', 'bill-court-count', 'bill-shuttlecock', 'bill-final-custom'];
             inputs.forEach(id => {
@@ -247,7 +245,6 @@
                 globalMatchesData = snapshot.val() || {};
                 renderSelectorDropdown();
                 
-                // หากไม่มีระบุแมตช์เริ่มต้น ให้หยิบตี้แรกสุดในตารางมาแสดงผล
                 if (!selectedMatchId || !globalMatchesData[selectedMatchId]) {
                     const keys = Object.keys(globalMatchesData);
                     selectedMatchId = keys.length > 0 ? keys[0] : '';
@@ -447,7 +444,6 @@
 
         async function deleteMatch() {
             if (!currentMatch) return;
-            // เพิ่มการแจ้งเตือนกดยืนยันตอนจะลบตี้ตามคำขอ
             if (!confirm('🚨 แจ้งเตือนความปลอดภัย: คุณต้องการที่จะกดลบและยุบตี้แบดมินตันนี้ทิ้งใช่ไหม? ระบบจะยิงข้อความแจ้งเตือนยกเลิกกิจกรรมเข้ากลุ่มไลน์ทันที!')) return;
             
             const cacheMatch = { ...currentMatch };
@@ -485,7 +481,6 @@
             alert('ลบรายชื่ออกจากรายการคิวเรียบร้อยครับ');
         }
 
-        // 💰 แปลงรูปภาพสลิปที่เลือกให้กลายเป็น String Base64 เพื่อยัดลง Realtime Database เลี่ยงการเช่าพื้นที่ Storage
         function uploadPaymentSlip() {
             const fileInput = document.getElementById('input-slip-file');
             if (!fileInput.files || fileInput.files.length === 0) {
@@ -512,7 +507,6 @@
             document.getElementById('image-modal').classList.remove('hidden');
         }
 
-        // ฟังก์ชันคำนวณเงินทั้งหมดและยิงแจ้งเรียกเก็บไปยัง LINE
         async function triggerBillingSubmit() {
             const rate = parseFloat(document.getElementById('bill-court-rate').value) || 0;
             const hrs = parseFloat(document.getElementById('bill-hours').value) || 0;
@@ -549,7 +543,6 @@
             }
         }
 
-        // ผูก Event Listener ทันทีเมื่อเปิดตัวแอปพลิเคชัน
         setupLiveBillingCalculators();
         initLiff();
     </script>
