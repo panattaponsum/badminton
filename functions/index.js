@@ -160,41 +160,57 @@ exports.apiNotifyBilling = functions.https.onRequest(async (req, res) => {
 });
 
 // ⏰ 4. ระบบเช็กยอดแจ้งเตือนอัตโนมัติล่วงหน้า 2 ชั่วโมง (v2 Cloud Scheduler)
-exports.check2HourReminder = onSchedule("every 15 minutes", async (event) => {
-    const snapshot = await db.ref("matches").get();
-    const matches = snapshot.val() || {};
-   const nowThailand = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Bangkok" }));
+// 🚀 3. Scheduler ทำงานทุกๆ 15 นาที เพื่อตรวจเช็กตี้แบดอีก 2 ชั่วโมงจะเริ่ม (เวอร์ชันแก้บั๊กเวลาไทย + จัดการ Memory)
+exports.checkTwoHourReminder = onSchedule({
+    schedule: "every 15 minutes",
+    timeZone: "Asia/Bangkok", // 🌟 บังคับเซิร์ฟเวอร์ยึดตามเขตเวลาประเทศไทย
+    memory: "256MiB"
+}, async (event) => {
+    // คำนวณเวลาปัจจุบันให้เป็นเวลาไทย
+    const nowThailand = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Bangkok" }));
+    
+    try {
+        const snapshot = await db.ref("matches").once("value");
+        const matches = snapshot.val() || {};
 
-    for (let key in matches) {
-        const match = matches[key];
-        if (match.status !== 'active' || match.notified2Hr) continue;
+        for (const matchId in matches) {
+            const match = matches[matchId];
+            
+            // ข้ามตี้ที่แจ้งเตือนไปแล้ว หรือไม่ได้อยู่ในสถานะ active
+            if (match.notified2Hr || match.status !== "active") continue;
 
-        // 🌟 แปลงเวลาของตี้แบดให้เป็นรูปแบบวันที่ที่ถูกต้อง
-const matchDateTime = new Date(`${match.date}T${match.time}:00`);
-        const timeDiffMs = matchDateTime - nowThailand;
-        const twoHoursInMs = 2 * 60 * 60 * 1000;
+            // แปลงเวลาของตี้แบดมินตัน
+            const matchDateTime = new Date(`${match.date}T${match.time}:00`);
+            const timeDiffMs = matchDateTime - nowThailand;
+            const twoHoursInMs = 2 * 60 * 60 * 1000;
 
-        if (timeDiffMs > 0 && timeDiffMs <= twoHoursInMs) {
-            const regData = match.registrations || {};
-            const players = Object.keys(regData).map(k => regData[k]).sort((a,b) => a.timestamp - b.timestamp);
-            const realPlayers = players.slice(0, parseInt(match.maxPlayers));
+            // 🎯 เงื่อนไข: ถ้าตี้กำลังจะเริ่มในอีกไม่เกิน 2 ชั่วโมงล่วงหน้า
+            if (timeDiffMs > 0 && timeDiffMs <= twoHoursInMs) {
+                const regData = match.registrations || {};
+                const players = Object.keys(regData).map(k => regData[k]).sort((a,b) => a.timestamp - b.timestamp);
+                const realPlayers = players.slice(0, parseInt(match.maxPlayers));
 
-            let playerNamesText = "";
-            realPlayers.forEach((p, idx) => { playerNamesText += `${idx + 1}. ${p.name}\n`; });
-            if (realPlayers.length === 0) playerNamesText = "ยังไม่มีสมาชิกลงชื่อตัวจริง";
+                let playerNamesText = "";
+                realPlayers.forEach((p, idx) => {
+                    playerNamesText += `${idx + 1}. ${p.name}\n`;
+                });
+                if (realPlayers.length === 0) playerNamesText = "ยังไม่มีสมาชิกลงชื่อตัวจริง";
 
-            const reminderText = `📢 [ประกาศแจ้งเตือนตี้แบดอีก 2 ชั่วโมง!]\nสนาม: ${match.location}\nเวลา: ${match.time} - ${match.endTime} น.\n\n🔥 สรุปรายชื่อตัวจริงยื่นยันสิทธิ์:\n${playerNamesText}\n⚠️ สมาชิกท่านใดติดธุระ รบกวนกด 'ยกเลิกคิว' ออกจากตี้ผ่านแอปด้วยครับ! 🐾`;
+                const reminderText = `📢 [ประกาศแจ้งเตือนตี้แบดอีก 2 ชั่วโมง!]\nสนาม: ${match.location}\nเวลา: ${match.time} - ${match.endTime} น.\n\n🔥 สรุปรายชื่อตัวจริงยืนยันสิทธิ์:\n${playerNamesText}\n⚠️ สมาชิกท่านใดติดธุระ รบกวนกด 'ยกเลิกคิว' ออกจากตี้ผ่านแอปด้วยครับ! 🐾`;
 
-            try {
+                // ส่งการ์ดเตือนเข้ากลุ่ม LINE
                 await axios.post("https://api.line.me/v2/bot/message/push", {
                     to: LINE_GROUP_ID,
                     messages: [{ type: "text", text: reminderText }]
-                }, { headers: { "Content-Type": "application/json", "Authorization": `Bearer ${LINE_ACCESS_TOKEN}` } });
+                }, {
+                    headers: { "Authorization": `Bearer ${LINE_ACCESS_TOKEN}` }
+                });
 
-                await db.ref(`matches/${key}/notified2Hr`).set(true);
-            } catch (error) { 
-                console.error("ระบบแจ้งเตือนผิดพลาดที่ ID แมตช์:", key, error); 
+                // 🌟 อัปเดตสถานะลงฐานข้อมูลว่าแจ้งเตือนตี้เซ็ตนี้เรียบร้อยแล้ว จะได้ไม่ส่งซ้ำๆ ทุก 15 นาที
+                await db.ref(`matches/${matchId}/notified2Hr`).set(true);
             }
         }
+    } catch (error) {
+        console.error("เกิดข้อผิดพลาดในระบบตั้งเวลาเตือน 2 ชม.:", error);
     }
 });
