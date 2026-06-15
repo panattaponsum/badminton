@@ -30,7 +30,11 @@ exports.apiNotifyMatchCreated = functions.https.onRequest(async (req, res) => {
     }
 
     try {
-        const match = req.body.data;
+        const match = req.body && req.body.data;
+        if (!match) {
+            res.status(400).send({ error: "missing match data" });
+            return;
+        }
         const thaiDate = new Date(match.date).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
         const flexMessage = {
             type: "flex",
@@ -68,6 +72,40 @@ exports.apiNotifyMatchCreated = functions.https.onRequest(async (req, res) => {
         res.status(500).send({ error: err.message });
     }
 });
+// 🚀 1.1 API แจ้งเตือนเมื่อมีการยกเลิก/ลบตี้
+exports.apiNotifyMatchDeleted = functions.https.onRequest(async (req, res) => {
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.set('Access-Control-Allow-Headers', 'Content-Type');
+
+    if (req.method === 'OPTIONS') {
+        res.sendStatus(204);
+        return;
+    }
+
+    try {
+        const match = req.body && req.body.data;
+        if (!match) {
+            res.status(400).send({ error: "missing match data" });
+            return;
+        }
+
+        const thaiDate = new Date(match.date).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
+        const messageText = `🚨 แจ้งยกเลิกตี้แบดมินตัน\nสนาม: ${match.location || '-'}\nวันที่: ${thaiDate}\nเวลา: ${match.time || '-'} - ${match.endTime || '-'} น.\nผู้สร้าง: ${match.creatorName || '-'}\n\nขออภัยสมาชิกทุกท่าน ตี้นี้ถูกยกเลิกแล้วครับ 🐾`;
+
+        await axios.post("https://api.line.me/v2/bot/message/push", {
+            to: LINE_GROUP_ID,
+            messages: [{ type: "text", text: messageText }]
+        }, {
+            headers: { "Authorization": `Bearer ${LINE_ACCESS_TOKEN}` }
+        });
+
+        res.status(200).send({ result: "ส่งแจ้งเตือนยกเลิกตี้เข้ากลุ่มเรียบร้อยแล้ว!" });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send({ error: err.message });
+    }
+});
 
 // 🚀 2. API แจ้งสรุปเรียกเก็บเงิน (Billing) พร้อมเลขบัญชี
 exports.apiNotifyBilling = functions.https.onRequest(async (req, res) => {
@@ -81,7 +119,13 @@ exports.apiNotifyBilling = functions.https.onRequest(async (req, res) => {
     }
 
     try {
-        const { matchId, summaryText, bankInfo } = req.body.data;
+        const data = req.body && req.body.data;
+        if (!data) {
+            res.status(400).send({ error: "missing billing data" });
+            return;
+        }
+
+        const { matchId, summaryText, bankInfo } = data;
         const billingMessage = {
             type: "flex",
             altText: "💰 บิลเรียกเก็บค่าแชร์ตี้แบดออกแล้วจ้า!",
