@@ -4,11 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ก๊วนบ๊อกแบ๊ก แบดมินตัน 🏸</title>
+    <!-- เรียกใช้ Tailwind CSS เพื่อความสวยงามและรองรับมือถือ -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- เรียกใช้ LINE LIFF SDK -->
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 </head>
 <body class="bg-slate-100 font-sans min-h-screen pb-10">
 
+    <!-- ส่วนหัว (Header) -->
     <div class="bg-gradient-to-r content-center from-green-500 to-emerald-600 text-white py-6 px-4 shadow-md text-center rounded-b-3xl">
         <h1 class="text-2xl font-bold flex justify-center items-center gap-2">
             🏸 ก๊วนบ๊อกแบ๊ก แบดมินตัน 🐾
@@ -16,29 +19,82 @@
         <p class="text-sm opacity-90 mt-1">ระบบลงชื่อคิวตี้แบดอัตโนมัติ</p>
     </div>
 
+    <!-- ส่วนแสดงโปรไฟล์ผู้ใช้งาน LINE -->
     <div id="user-profile" class="max-w-md mx-auto mt-4 px-4 hidden">
         <div class="bg-white p-3 rounded-2xl shadow-sm flex items-center gap-3 border border-slate-200">
             <img id="user-avatar" class="w-12 h-12 rounded-full border-2 border-green-500" src="" alt="Avatar">
-            <div>
+            <div class="flex-1">
                 <p class="text-xs text-slate-400">ยินดีต้อนรับ</p>
                 <p id="user-name" class="font-bold text-slate-700">กำลังโหลดโปรไฟล์...</p>
+            </div>
+            <span id="badge-admin" class="hidden bg-amber-100 text-amber-700 text-xs px-2.5 py-1 rounded-full font-bold border border-amber-200">👑 Admin</span>
+        </div>
+    </div>
+
+    <!-- [ADMIN ZONE] หน้าจอสร้าง/ลบตี้ (จะแสดงเฉพาะคนที่เป็นแอดมิน) -->
+    <div id="admin-panel" class="max-w-md mx-auto mt-4 px-4 hidden">
+        <div class="bg-gradient-to-br from-slate-700 to-slate-800 text-white p-5 rounded-2xl shadow-md border border-slate-600">
+            <h2 class="text-md font-bold border-b border-slate-600 pb-2 mb-3 flex items-center gap-2 text-amber-400">
+                🛠️ แผงควบคุมผู้ดูแลระบบ (Admin)
+            </h2>
+            
+            <!-- ฟอร์มสร้างตี้ใหม่ -->
+            <div id="create-form" class="space-y-3">
+                <div>
+                    <label class="block text-xs opacity-70 mb-1">ชื่อสนามแบดมินตัน</label>
+                    <input type="text" id="input-location" placeholder="เช่น สนามแบดบ๊อกแบ๊ก สเตเดียม" class="w-full bg-slate-600 border border-slate-500 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-green-400">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-xs opacity-70 mb-1">วันที่</label>
+                        <input type="text" id="input-date" placeholder="เช่น วันเสาร์นี้, 20 มิ.ย." class="w-full bg-slate-600 border border-slate-500 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-green-400">
+                    </div>
+                    <div>
+                        <label class="block text-xs opacity-70 mb-1">เวลา</label>
+                        <input type="text" id="input-time" placeholder="เช่น 18:00 - 20:00 น." class="w-full bg-slate-600 border border-slate-500 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-green-400">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs opacity-70 mb-1">จำนวนตัวจริงสูงสุด (คน)</label>
+                    <input type="number" id="input-max" value="6" min="1" class="w-full bg-slate-600 border border-slate-500 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-green-400">
+                </div>
+                <button onclick="createNewMatch()" class="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold py-2.5 rounded-xl shadow-md text-sm transition-all mt-2">
+                    ✨ เปิดตี้แมตช์ใหม่ (ล้างตี้เก่า)
+                </button>
+            </div>
+
+            <!-- ส่วนแสดงเมื่อมีตี้ออนไลน์อยู่ และปุ่มลบตี้ -->
+            <div id="active-admin-info" class="hidden mt-2 border-t border-slate-600 pt-3 flex items-center justify-between">
+                <span class="text-xs text-green-400 flex items-center gap-1">● มีตี้กำลังออนไลน์อยู่</span>
+                <button onclick="deleteMatch()" class="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-all">
+                    🗑️ ลบตี้ปัจจุบัน
+                </button>
             </div>
         </div>
     </div>
 
+    <!-- บล็อกแสดงรายละเอียดแมตช์สำหรับผู้ใช้งานทั่วไป -->
     <div class="max-w-md mx-auto mt-4 px-4">
-        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
-            <h2 class="text-lg font-bold text-slate-800 border-b pb-2 mb-3">📍 รายละเอียดแมตช์ล่าสุด</h2>
-            <div class="space-y-2 text-sm text-slate-600">
+        <div id="match-card" class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+            <h2 class="text-lg font-bold text-slate-800 border-b pb-2 mb-3 flex justify-between items-center">
+                <span>📍 รายละเอียดแมตช์ล่าสุด</span>
+                <span id="match-status-tag" class="text-xs bg-green-100 text-green-700 px-2.5 py-0.5 rounded-full font-medium">เปิดรับสมัคร</span>
+            </h2>
+            <div id="match-display-info" class="space-y-2 text-sm text-slate-600">
                 <p><strong>สนาม:</strong> <span id="match-location">กำลังโหลดข้อมูล...</span></p>
                 <p><strong>วันที่:</strong> <span id="match-date">-</span></p>
                 <p><strong>เวลา:</strong> <span id="match-time">-</span></p>
                 <p><strong>รับสมัคร:</strong> <span id="match-slots" class="text-green-600 font-semibold">-</span></p>
             </div>
+            <!-- แสดงกรณีไม่มีตี้เปิดอยู่ -->
+            <div id="no-match-message" class="hidden text-center py-6 text-slate-400 text-sm">
+                😴 ตอนนี้ยังไม่มีการเปิดตี้แมตช์แบดมินตันน้าาา~
+            </div>
         </div>
     </div>
 
-    <div class="max-w-md mx-auto mt-5 px-4 flex gap-3">
+    <!-- ปุ่มแอคชันสำหรับการลงชื่อ / ยกเลิก -->
+    <div id="user-actions" class="max-w-md mx-auto mt-5 px-4 flex gap-3">
         <button id="btn-join" onclick="joinMatch()" class="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-green-200 transition-all text-center">
             🙋‍♂️ ลงชื่อเข้าตี้
         </button>
@@ -47,7 +103,9 @@
         </button>
     </div>
 
-    <div class="max-w-md mx-auto mt-6 px-4 space-y-4">
+    <!-- รายชื่อผู้เล่น (ตัวจริง / สำรอง) -->
+    <div id="player-lists-container" class="max-w-md mx-auto mt-6 px-4 space-y-4">
+        <!-- โซนตัวจริง -->
         <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
             <h3 class="font-bold text-emerald-600 border-b pb-2 mb-2 flex justify-between">
                 <span>🔥 รายชื่อตัวจริง</span>
@@ -58,6 +116,7 @@
             </ol>
         </div>
 
+        <!-- โซนตัวสำรอง -->
         <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
             <h3 class="font-bold text-amber-600 border-b pb-2 mb-2 flex justify-between">
                 <span>⏳ รายชื่อคิวสำรอง</span>
@@ -70,23 +129,26 @@
     </div>
 
     <script>
-        // เปลี่ยนเป็น LIFF ID ของคุณ
         const LIFF_ID = '2010400559-X4eBS5zg'; 
         
+        // 🚨 ตรงนี้ให้ใส่ LINE User ID ของคุณเพื่อเปิดโหมดแอดมินคนเดียวในตี้
+        const ADMIN_LINE_IDS = ['Uxxxxxxของคุณที่ต้องการให้เป็นแอดมิน']; 
+
         let userId = '';
         let displayName = '';
         let pictureUrl = '';
+        let isAdmin = false;
 
-        // ข้อมูลจำลองสำหรับหน้าเว็บ (เมื่อเชื่อมต่อ Firebase Realtime/Firestore สามารถดึงค่าจริงมาใส่ได้)
-        let matchDetails = {
-            id: 'match_001',
+        // ดึงข้อมูลตี้จาก LocalStorage ชั่วคราว (เพื่อจำลองสถานะ ถ้าต่อ Firestore ข้อมูลจะอัปเดตข้ามเครื่องทันที)
+        let currentMatch = JSON.parse(localStorage.getItem('bokbak_match')) || {
+            hasActive: true,
             location: 'สนามแบดมินตันบ๊อกแบ๊ก สเตเดียม',
             date: 'วันเสาร์นี้',
             time: '18:00 - 20:00 น.',
             maxPlayers: 6
         };
 
-        let registrations = []; // เก็บคิวคนลงชื่อ
+        let registrations = JSON.parse(localStorage.getItem('bokbak_regs')) || [];
 
         async function initLiff() {
             try {
@@ -111,15 +173,44 @@
             document.getElementById('user-avatar').src = pictureUrl || 'https://cdn-icons-png.flaticon.com/512/1077/1077114.png';
             document.getElementById('user-profile').classList.remove('hidden');
             
-            renderMatchInfo();
+            // ตรวจสอบสิทธิ์ว่าใช่ Admin หรือไม่
+            // แนะนำ: ระหว่างเทสสิทธิ์ ให้ตั้งค่าเป็น true ก่อนได้ครับเพื่อเปิดเมนูหลังบ้านเลย
+            if (ADMIN_LINE_IDS.includes(userId) || ADMIN_LINE_IDS[0] === 'Uxxxxxxของคุณที่ต้องการให้เป็นแอดมิน') {
+                isAdmin = true;
+                document.getElementById('badge-admin').classList.remove('hidden');
+                document.getElementById('admin-panel').classList.remove('hidden');
+            }
+
+            renderMatchPage();
         }
 
-        function renderMatchInfo() {
-            document.getElementById('match-location').innerText = matchDetails.location;
-            document.getElementById('match-date').innerText = matchDetails.date;
-            document.getElementById('match-time').innerText = matchDetails.time;
-            document.getElementById('match-slots').innerText = `จำกัด ${matchDetails.maxPlayers} คน`;
-            updatePlayerLists();
+        function renderMatchPage() {
+            if (currentMatch && currentMatch.hasActive) {
+                document.getElementById('match-display-info').classList.remove('hidden');
+                document.getElementById('match-status-tag').classList.remove('hidden');
+                document.getElementById('no-match-message').classList.add('hidden');
+                document.getElementById('user-actions').classList.remove('hidden');
+                document.getElementById('player-lists-container').classList.remove('hidden');
+
+                document.getElementById('match-location').innerText = currentMatch.location;
+                document.getElementById('match-date').innerText = currentMatch.date;
+                document.getElementById('match-time').innerText = currentMatch.time;
+                document.getElementById('match-slots').innerText = `จำกัด ${currentMatch.maxPlayers} คน`;
+
+                if (isAdmin) {
+                    document.getElementById('active-admin-info').classList.remove('hidden');
+                }
+                updatePlayerLists();
+            } else {
+                document.getElementById('match-display-info').classList.add('hidden');
+                document.getElementById('match-status-tag').classList.add('hidden');
+                document.getElementById('no-match-message').classList.remove('hidden');
+                document.getElementById('user-actions').classList.add('hidden');
+                document.getElementById('player-lists-container').classList.add('hidden');
+                if (isAdmin) {
+                    document.getElementById('active-admin-info').classList.add('hidden');
+                }
+            }
         }
 
         function updatePlayerLists() {
@@ -129,10 +220,10 @@
             listReal.innerHTML = '';
             listWaiting.innerHTML = '';
 
-            const realPlayers = registrations.slice(0, matchDetails.maxPlayers);
-            const waitingPlayers = registrations.slice(matchDetails.maxPlayers);
+            const realPlayers = registrations.slice(0, parseInt(currentMatch.maxPlayers));
+            const waitingPlayers = registrations.slice(parseInt(currentMatch.maxPlayers));
 
-            document.getElementById('count-real').innerText = `${realPlayers.length} / ${matchDetails.maxPlayers} คน`;
+            document.getElementById('count-real').innerText = `${realPlayers.length} / ${currentMatch.maxPlayers} คน`;
             document.getElementById('count-waiting').innerText = `${waitingPlayers.length} คน`;
 
             if(realPlayers.length === 0) {
@@ -152,14 +243,57 @@
             }
         }
 
+        // [ADMIN FUNCTION] สร้างตี้ใหม่
+        function createNewMatch() {
+            const loc = document.getElementById('input-location').value.trim();
+            const dt = document.getElementById('input-date').value.trim();
+            const tm = document.getElementById('input-time').value.trim();
+            const mx = document.getElementById('input-max').value;
+
+            if (!loc || !dt || !tm) {
+                alert('กรุณากรอกข้อมูลให้ครบถ้วนก่อนเปิดตี้ใหม่น้าา 🐾');
+                return;
+            }
+
+            currentMatch = {
+                hasActive: true,
+                location: loc,
+                date: dt,
+                time: tm,
+                maxPlayers: mx
+            };
+
+            registrations = []; // เคลียร์รายชื่อเก่าออกทันทีเมื่อเปิดตี้ใหม่
+            
+            localStorage.setItem('bokbak_match', JSON.stringify(currentMatch));
+            localStorage.setItem('bokbak_regs', JSON.stringify(registrations));
+
+            renderMatchPage();
+            alert('✨ เปิดตี้แมตช์ใหม่ เรียบร้อยแล้วครับผม!');
+        }
+
+        // [ADMIN FUNCTION] ลบตี้ปัจจุบัน
+        function deleteMatch() {
+            if (!confirm('คุณแน่ใจไหมที่จะลบตี้แมตช์นี้และล้างรายชื่อทิ้งทั้งหมด? 🗑️')) return;
+
+            currentMatch = { hasActive: false };
+            registrations = [];
+
+            localStorage.setItem('bokbak_match', JSON.stringify(currentMatch));
+            localStorage.setItem('bokbak_regs', JSON.stringify(registrations));
+
+            renderMatchPage();
+            alert('🗑️ ลบตี้และเคลียร์ข้อมูลเรียบร้อยแล้วครับ');
+        }
+
         function joinMatch() {
             if (!userId) return;
-            // เช็กว่าเคยลงชื่อไปหรือยัง
             if (registrations.some(p => p.id === userId)) {
                 alert('คุณได้ลงชื่อในตี้นี้เรียบร้อยแล้วน้า 🐶');
                 return;
             }
             registrations.push({ id: userId, name: displayName });
+            localStorage.setItem('bokbak_regs', JSON.stringify(registrations));
             updatePlayerLists();
             alert('ลงชื่อเข้าตี้สำเร็จแล้วคร้าบ! 🏸');
         }
@@ -172,11 +306,11 @@
                 return;
             }
             registrations.splice(index, 1);
+            localStorage.setItem('bokbak_regs', JSON.stringify(registrations));
             updatePlayerLists();
             alert('ยกเลิกคิวให้เรียบร้อยแล้วครับ');
         }
 
-        // เริ่มทำงานเมื่อเปิดหน้าเว็บ
         initLiff();
     </script>
 </body>
