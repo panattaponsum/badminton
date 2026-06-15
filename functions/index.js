@@ -15,10 +15,7 @@ const LINE_GROUP_ID = "รหัสห้องกลุ่มไลน์ขอ
 /**
  * 🚀 ฟังก์ชันที่ 1: ตรวจจับเมื่อมีการสร้างตี้ใหม่ -> ยิง Flex Message หรูเข้ากลุ่ม LINE ทันที
  */
-exports.onMatchCreated = onValueCreated({
-    instance: "bokbak-badminton-default-rtdb", // ชื่อถังข้อมูลของคุณ
-    ref: "/activeMatch"
-}, async (event) => {
+exports.onMatchCreated = onValueCreated("/activeMatch", async (event) =>  {
     const matchData = event.data.val();
     if (!matchData || !matchData.hasActive) return;
 
