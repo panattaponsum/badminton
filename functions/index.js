@@ -13,7 +13,14 @@ const db = admin.database();
 // 🚨 ใส่ค่า Token และ Group ID ของคุณตรงนี้
 const LINE_ACCESS_TOKEN = "ไอ้ตัวยาวๆ_CHANNEL_ACCESS_TOKEN_ของคุณ";
 const LINE_GROUP_ID = "รหัสห้องกลุ่มไลน์ของคุณ_ที่ขึ้นต้นด้วย_C..."; 
-
+exports.webhook = functions.https.onRequest((req, res) => {
+    const events = req.body.events;
+    if (events && events.length > 0) {
+        console.log("ได้รับ Event จาก LINE:", JSON.stringify(events[0])); // เพิ่มบรรทัดนี้
+        // ระบบจะบันทึก log ทุกอย่างที่บอทได้รับ
+    }
+    res.sendStatus(200);
+});
 /**
  * 🚀 ฟังก์ชันที่ 1: ตั้งชื่อใหม่เพื่อหลบข้อจำกัด และรับคำสั่งผ่าน URL ตรงๆ (v1 HTTP)
  */
