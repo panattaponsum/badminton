@@ -9,62 +9,102 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 </head>
-<body class="bg-slate-100 font-sans min-h-screen pb-10">
+<body class="bg-slate-100 font-sans min-h-screen pb-12">
 
-    <div class="bg-gradient-to-r content-center from-green-500 to-emerald-600 text-white py-6 px-4 shadow-md text-center rounded-b-3xl">
-        <h1 class="text-2xl font-bold flex justify-center items-center gap-2">
-            🏸 ก๊วนบ๊อกแบ๊ก แบดมินตัน 🐾
-        </h1>
-        <p class="text-sm opacity-90 mt-1">ระบบลงชื่อคิวตี้แบดอัตโนมัติ</p>
+    <div class="bg-gradient-to-r from-green-500 to-emerald-600 text-white py-6 px-4 shadow-md text-center rounded-b-3xl">
+        <h1 class="text-2xl font-bold flex justify-center items-center gap-2">🏸 ก๊วนบ๊อกแบ๊ก แบดมินตัน 🐾</h1>
+        <p class="text-sm opacity-90 mt-1">ระบบลงชื่อคิวและคำนวณเงินแชร์ตี้แบด</p>
     </div>
 
     <div id="user-profile" class="max-w-md mx-auto mt-4 px-4 hidden">
         <div class="bg-white p-3 rounded-2xl shadow-sm flex items-center gap-3 border border-slate-200">
             <img id="user-avatar" class="w-12 h-12 rounded-full border-2 border-green-500" src="" alt="Avatar">
             <div class="flex-1">
-                <p class="text-xs text-slate-400">ยินดีต้อนรับ</p>
-                <p id="user-name" class="font-bold text-slate-700">กำลังโหลดโปรไฟล์...</p>
+                <p class="text-xs text-slate-400">ผู้ใช้งานปัจจุบัน</p>
+                <p id="user-name" class="font-bold text-slate-700">กำลังโหลดข้อมูลโปรไฟล์...</p>
             </div>
-            <span id="badge-admin" class="hidden bg-amber-100 text-amber-700 text-xs px-2.5 py-1 rounded-full font-bold border border-amber-200">👑 หัวหน้าตี้</span>
+            <span id="badge-admin" class="hidden bg-amber-100 text-amber-700 text-xs px-2.5 py-1 rounded-full font-bold border border-amber-200">👑 เจ้าของตี้</span>
+        </div>
+    </div>
+
+    <div class="max-w-md mx-auto mt-4 px-4">
+        <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+            <label class="block text-xs font-bold text-slate-500 mb-1">เลือกตี้แบดมินตันที่ต้องการเข้าร่วม:</label>
+            <select id="match-selector" onchange="switchMatch(this.value)" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-2 py-1.5 text-sm text-slate-700 font-medium focus:outline-none focus:ring-1 focus:ring-green-500">
+                <option value="">-- กำลังโหลดรายการตี้แบดทั้งหมด... --</option>
+            </select>
         </div>
     </div>
 
     <div id="admin-panel" class="max-w-md mx-auto mt-4 px-4">
         <div id="panel-create" class="bg-gradient-to-br from-slate-700 to-slate-800 text-white p-5 rounded-2xl shadow-md border border-slate-600 hidden">
-            <h2 class="text-md font-bold border-b border-slate-600 pb-2 mb-3 flex items-center gap-2 text-amber-400">
-                ✨ ยังไม่มีคิวตี้เปิดอยู่ สร้างแมตช์ได้เลย!
-            </h2>
+            <h2 class="text-md font-bold border-b border-slate-600 pb-2 mb-3 flex items-center gap-2 text-amber-400">✨ เปิดตี้แบดมินตันใหม่</h2>
             <div class="space-y-3">
                 <div>
-                    <label class="block text-xs opacity-70 mb-1">ชื่อสนามแบดมินตัน</label>
-                    <input type="text" id="input-location" placeholder="เช่น สนามแบดบ๊อกแบ๊ก สเตเดียม" class="w-full bg-slate-600 border border-slate-500 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-green-400">
+                    <label class="block text-xs opacity-70 mb-1">สถานที่ / สนามแบดมินตัน</label>
+                    <input type="text" id="input-location" placeholder="เช่น สนามแบดมินตัน สเตเดียม" class="w-full bg-slate-600 border border-slate-500 rounded-lg px-3 py-2 text-sm text-white focus:outline-none">
                 </div>
-                <div class="grid grid-cols-2 gap-2">
-                    <div>
-                        <label class="block text-xs opacity-70 mb-1">เลือกวันที่ (ปฏิทิน)</label>
-                        <input type="date" id="input-date" class="w-full bg-slate-600 border border-slate-500 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-green-400">
+                <div class="grid grid-cols-3 gap-2">
+                    <div class="col-span-1">
+                        <label class="block text-xs opacity-70 mb-1">วันที่ตี</label>
+                        <input type="date" id="input-date" class="w-full bg-slate-600 border border-slate-500 rounded-lg px-2 py-2 text-xs text-white focus:outline-none">
                     </div>
                     <div>
-                        <label class="block text-xs opacity-70 mb-1">เวลาเริ่มตี</label>
-                        <input type="time" id="input-time" class="w-full bg-slate-600 border border-slate-500 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-green-400">
+                        <label class="block text-xs opacity-70 mb-1">เวลาเริ่ม</label>
+                        <input type="time" id="input-time" class="w-full bg-slate-600 border border-slate-500 rounded-lg px-2 py-2 text-xs text-white focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs opacity-70 mb-1">เวลาจบ</label>
+                        <input type="time" id="input-endtime" class="w-full bg-slate-600 border border-slate-500 rounded-lg px-2 py-2 text-xs text-white focus:outline-none">
                     </div>
                 </div>
                 <div>
-                    <label class="block text-xs opacity-70 mb-1">จำนวนตัวจริงสูงสุด (คน)</label>
-                    <input type="number" id="input-max" value="6" min="1" class="w-full bg-slate-600 border border-slate-500 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-green-400">
+                    <label class="block text-xs opacity-70 mb-1">จำนวนผู้เล่นตัวจริงสูงสุด (คน)</label>
+                    <input type="number" id="input-max" value="6" min="1" class="w-full bg-slate-600 border border-slate-500 rounded-lg px-3 py-2 text-sm text-white focus:outline-none">
                 </div>
-                <button onclick="createNewMatch()" class="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold py-2.5 rounded-xl shadow-md text-sm transition-all mt-2">
-                    🚀 ยืนยันเปิดตี้และแจ้งเตือนเข้ากลุ่ม LINE
-                </button>
+                <button onclick="createNewMatch()" class="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold py-2.5 rounded-xl text-sm transition-all mt-1">🚀 ยืนยันเปิดตี้และส่งการ์ดเชิญเข้ากลุ่ม LINE</button>
             </div>
         </div>
 
-        <div id="panel-manage" class="bg-gradient-to-br from-slate-700 to-slate-800 text-white p-4 rounded-2xl shadow-md border border-slate-600 hidden">
+        <div id="panel-manage" class="bg-gradient-to-br from-slate-700 to-slate-800 text-white p-4 rounded-2xl shadow-md border border-slate-600 hidden space-y-3 mt-4">
             <div class="flex items-center justify-between">
-                <span class="text-xs text-amber-400 flex items-center gap-1 font-medium">● คุณเป็นหัวหน้าตี้แมตช์นี้</span>
-                <button onclick="deleteMatch()" class="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-all">
-                    🗑️ ปิดตี้ / ล้างคิวทั้งหมด
-                </button>
+                <span class="text-xs text-amber-400 font-medium">● ระบบจัดการประจำตี้ของคุณ</span>
+                <button onclick="deleteMatch()" class="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-colors">🗑️ ยกเลิก/ลบตี้นี้</button>
+            </div>
+            
+            <div id="billing-setup-box" class="bg-slate-800/80 p-3 rounded-xl border border-slate-600 space-y-2">
+                <h3 class="text-xs font-bold text-emerald-400">💰 คำนวณสรุปค่าใช้จ่ายเรียกเก็บเงินคนแชร์ตี้</h3>
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                        <label class="block opacity-70 mb-0.5">ค่าคอร์ด / ชั่วโมง (บาท)</label>
+                        <input type="number" id="bill-court-rate" value="160" class="w-full bg-slate-700 border border-slate-500 rounded p-1 text-white">
+                    </div>
+                    <div>
+                        <label class="block opacity-70 mb-0.5">จำนวนชั่วโมงที่ใช้</label>
+                        <input type="number" id="bill-hours" value="2" class="w-full bg-slate-700 border border-slate-500 rounded p-1 text-white">
+                    </div>
+                    <div>
+                        <label class="block opacity-70 mb-0.5">จำนวนคอร์ดที่จอง</label>
+                        <input type="number" id="bill-court-count" value="1" class="w-full bg-slate-700 border border-slate-500 rounded p-1 text-white">
+                    </div>
+                    <div>
+                        <label class="block opacity-70 mb-0.5">รวมค่าลูกแบดมินตันทั้งหมด</label>
+                        <input type="number" id="bill-shuttlecock" value="120" class="w-full bg-slate-700 border border-slate-500 rounded p-1 text-white">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs opacity-70 mb-0.5">ข้อมูลบัญชี/ธนาคารของหัวตี้เพื่อให้สมาชิกโอนคืน</label>
+                    <input type="text" id="bill-bank" placeholder="กสิกร นายบ๊อกแบ๊ก 012-3-45678-9" class="w-full bg-slate-700 border border-slate-500 rounded p-1.5 text-xs text-white">
+                </div>
+                <div class="bg-slate-900/60 p-2 rounded text-center">
+                    <p class="text-xs opacity-80">ยอดคำนวณระบบเบื้องต้น: <span id="calc-preview-total" class="font-bold text-white">0</span> บาท</p>
+                    <p class="text-xs text-amber-300">หารเฉลี่ยสมาชิกตี้จริง: <span id="calc-preview-split" class="font-bold text-lg">0</span> บาท/คน</p>
+                </div>
+                <div>
+                    <label class="block text-xs text-yellow-400 mb-0.5">✍️ หัวตี้ปรับแก้ยอดเงินสุทธิรวมได้ที่นี่ (กรณีมีส่วนลด/เศษปัดราคาทิ้ง):</label>
+                    <input type="number" id="bill-final-custom" placeholder="ปล่อยว่างไว้หากต้องการใช้ยอดคำนวณปกติ" class="w-full bg-slate-700 border border-yellow-500 rounded p-1.5 text-sm text-yellow-300 font-bold">
+                </div>
+                <button onclick="triggerBillingSubmit()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 rounded text-xs transition-colors shadow">📢 ยืนยันและส่งบิลเรียกเก็บเงินเข้ากลุ่ม LINE</button>
             </div>
         </div>
     </div>
@@ -72,64 +112,66 @@
     <div class="max-w-md mx-auto mt-4 px-4">
         <div id="match-card" class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
             <h2 class="text-lg font-bold text-slate-800 border-b pb-2 mb-3 flex justify-between items-center">
-                <span>📍 รายละเอียดแมตช์ล่าสุด</span>
-                <span id="match-status-tag" class="text-xs bg-green-100 text-green-700 px-2.5 py-0.5 rounded-full font-medium hidden">เปิดรับสมัคร</span>
+                <span>📍 รายละเอียดข้อมูลแมตช์</span>
+                <span id="match-status-tag" class="text-xs bg-green-100 text-green-700 px-2.5 py-0.5 rounded-full font-medium">เปิดรับสมัคร</span>
             </h2>
-            <div id="match-display-info" class="space-y-2 text-sm text-slate-600 hidden">
-                <p><strong>สนาม:</strong> <span id="match-location">กำลังโหลดข้อมูล...</span></p>
-                <p><strong>วันที่แข่ง:</strong> <span id="match-date">-</span></p>
-                <p><strong>เวลาเริ่ม:</strong> <span id="match-time">-</span></p>
-                <p><strong>ผู้สร้างตี้:</strong> <span id="match-creator" class="text-amber-600 font-semibold">-</span></p>
-                <p><strong>รับสมัคร:</strong> <span id="match-slots" class="text-green-600 font-semibold">-</span></p>
-            </div>
-            <div id="no-match-message" class="hidden text-center py-6 text-slate-400 text-sm">
-                😴 ตอนนี้ยังไม่มีใครเปิดตี้แบดมินตันน้าาา~ สามารถกรอกฟอร์มด้านบนเพื่อตั้งตี้เองได้เลยครับ
+            <div id="match-display-info" class="space-y-2 text-sm text-slate-600">
+                <p><strong>สถานที่แข่งขัน:</strong> <span id="match-location">กรุณาเลือกตี้ด้านบน หรือสร้างตี้ใหม่</span></p>
+                <p><strong>เวลากิจกรรม:</strong> <span id="match-time">-</span></p>
+                <p><strong>ผู้สร้างตี้หลัก:</strong> <span id="match-creator" class="text-amber-600 font-semibold">-</span></p>
+                <p><strong>ข้อจำกัดผู้เล่น:</strong> <span id="match-slots" class="text-green-600 font-semibold">-</span></p>
             </div>
         </div>
     </div>
 
     <div id="user-actions" class="max-w-md mx-auto mt-5 px-4 flex gap-3 hidden">
-        <button id="btn-join" onclick="joinMatch()" class="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-green-200 transition-all text-center">
-            🙋‍♂️ ลงชื่อเข้าตี้
-        </button>
-        <button id="btn-leave" onclick="leaveMatch()" class="flex-1 bg-rose-500 hover:bg-rose-600 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-rose-200 transition-all text-center">
-            ❌ ยกเลิกคิว
-        </button>
+        <button id="btn-join" onclick="joinMatch()" class="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-xl shadow-md transition-all text-sm">🙋‍♂️ ลงชื่อเข้าตี้</button>
+        <button id="btn-leave" onclick="leaveMatch()" class="flex-1 bg-rose-500 hover:bg-rose-600 text-white font-bold py-3 px-4 rounded-xl shadow-md transition-all text-sm">❌ ยกเลิกคิว/ถอนตัว</button>
     </div>
 
-    <div id="player-lists-container" class="max-w-md mx-auto mt-6 px-4 space-y-4 hidden">
+    <div id="player-lists-container" class="max-w-md mx-auto mt-4 px-4 space-y-4 hidden">
+        
+        <div id="invoice-display-card" class="bg-amber-50 p-4 rounded-2xl border-2 border-amber-300 hidden shadow-sm">
+            <h3 class="font-bold text-amber-800 text-sm mb-1 flex items-center gap-1">💰 สรุปรายละเอียดการเก็บเงินค่าคอร์ด</h3>
+            <p id="invoice-text-details" class="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed bg-white/70 p-2.5 rounded-lg border border-amber-200"></p>
+            <div class="mt-3 p-2 bg-white rounded-lg border border-amber-200">
+                <p class="text-xs font-bold text-amber-700">📎 แนบไฟล์ภาพหลักฐานการโอนเงิน (สลิป):</p>
+                <input type="file" id="input-slip-file" accept="image/*" class="mt-1 block w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-amber-100 file:text-amber-700">
+                <button onclick="uploadPaymentSlip()" class="mt-2 w-full bg-amber-600 hover:bg-amber-700 text-white text-xs py-1.5 rounded-lg font-bold transition-colors">📤 คลิกอัปโหลดส่งให้หัวตี้ตรวจสอบ</button>
+            </div>
+        </div>
+
         <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
             <h3 class="font-bold text-emerald-600 border-b pb-2 mb-2 flex justify-between">
-                <span>🔥 รายชื่อตัวจริง</span>
+                <span>🔥 รายชื่อสมาชิกตัวจริง & การชำระเงิน</span>
                 <span id="count-real" class="text-sm text-slate-500">0 คน</span>
             </h3>
-            <ol id="list-real" class="list-decimal list-inside space-y-1.5 text-slate-700 text-sm">
-                <li class="text-slate-400 list-none text-center py-2">ยังไม่มีรายชื่อ...</li>
-            </ol>
+            <div id="list-real" class="space-y-2 text-slate-700 text-sm"></div>
         </div>
 
         <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
             <h3 class="font-bold text-amber-600 border-b pb-2 mb-2 flex justify-between">
-                <span>⏳ รายชื่อคิวสำรอง</span>
+                <span>⏳ รายชื่อคิวสำรองตกค้าง</span>
                 <span id="count-waiting" class="text-sm text-slate-500">0 คน</span>
             </h3>
-            <ol id="list-waiting" class="list-decimal list-inside space-y-1.5 text-slate-700 text-sm">
-                <li class="text-slate-400 list-none text-center py-2">ไม่มีคิวตกค้าง...</li>
-            </ol>
+            <div id="list-waiting" class="space-y-1 text-slate-700 text-sm"></div>
         </div>
+    </div>
+
+    <div id="image-modal" onclick="this.classList.add('hidden')" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 hidden">
+        <img id="modal-img-frame" src="" class="max-w-full max-h-full rounded shadow-xl" alt="Slip Enlarged">
     </div>
 
     <script>
         const LIFF_ID = '2010400559-X4eBS5zg'; 
-        
-        // 🚨 เอาโค้ด firebaseConfig ของจริงของคุณ มาวางทับตรงนี้นะครับ! ไม่งั้นเว็บโหลดไม่ขึ้น
         const firebaseConfig = {
-           apiKey: "AIzaSyC1Hl0kB27UqbZZXJdfkWgGimvmWo13rLg",
-  authDomain: "bokbak-badminton.firebaseapp.com",
-  projectId: "bokbak-badminton",
-  storageBucket: "bokbak-badminton.firebasestorage.app",
-  messagingSenderId: "343879156501",
-  appId: "1:343879156501:web:5f3f6d24bbc3928ea8df1c"
+            apiKey: "AIzaSyC1Hl0kB27UqbZZXJdfkWgGimvmWo13rLg",
+            authDomain: "bokbak-badminton.firebaseapp.com",
+            projectId: "bokbak-badminton",
+            databaseURL: "https://bokbak-badminton-default-rtdb.firebaseio.com",
+            storageBucket: "bokbak-badminton.firebasestorage.app",
+            messagingSenderId: "343879156501",
+            appId: "1:343879156501:web:5f3f6d24bbc3928ea8df1c"
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
@@ -137,19 +179,22 @@
         let userId = '';
         let displayName = '';
         let pictureUrl = '';
+        
+        let selectedMatchId = ''; 
+        let globalMatchesData = {};
         let currentMatch = null;
         let registrations = [];
 
         async function initLiff() {
             try {
                 await liff.init({ liffId: LIFF_ID });
-                if (liff.isLoggedIn()) {
-                    getUserProfile();
-                } else {
-                    liff.login();
+                if (liff.isLoggedIn()) { 
+                    getUserProfile(); 
+                } else { 
+                    liff.login(); 
                 }
-            } catch (error) {
-                console.error('LIFF Initialization failed', error);
+            } catch (error) { 
+                console.error('LIFF Init Error', error); 
             }
         }
 
@@ -163,41 +208,126 @@
             document.getElementById('user-avatar').src = pictureUrl || 'https://cdn-icons-png.flaticon.com/512/1077/1077114.png';
             document.getElementById('user-profile').classList.remove('hidden');
             
-            listenToDatabase();
+            // อ่านดึงข้อมูลแมตช์แชร์เฉพาะทาง URL parameter (เช่น ?matchId=-Nxxx)
+            const urlParams = new URLSearchParams(window.location.search);
+            if(urlParams.get('matchId')) { 
+                selectedMatchId = urlParams.get('matchId'); 
+            }
+
+            listenGlobalDatabase();
         }
 
-        function listenToDatabase() {
-            db.ref('activeMatch').on('value', (snapshot) => {
-                currentMatch = snapshot.val();
-                
-                db.ref('registrations').on('value', (regSnapshot) => {
-                    const data = regSnapshot.val() || {};
-                    registrations = Object.keys(data).map(key => data[key]);
-                    renderMatchPage();
-                });
+        // เชื่อมโยงระบุตัวตรวจจับการคำนวณราคาแบบ Realtime ของฝั่งหน้าบ้าน
+        function setupLiveBillingCalculators() {
+            const inputs = ['bill-court-rate', 'bill-hours', 'bill-court-count', 'bill-shuttlecock', 'bill-final-custom'];
+            inputs.forEach(id => {
+                document.getElementById(id)?.addEventListener('input', updateLiveCalcPreview);
             });
         }
 
+        function updateLiveCalcPreview() {
+            if (!currentMatch) return;
+            const rate = parseFloat(document.getElementById('bill-court-rate').value) || 0;
+            const hrs = parseFloat(document.getElementById('bill-hours').value) || 0;
+            const courts = parseFloat(document.getElementById('bill-court-count').value) || 0;
+            const balls = parseFloat(document.getElementById('bill-shuttlecock').value) || 0;
+
+            const calculatedTotal = (rate * hrs * courts) + balls;
+            document.getElementById('calc-preview-total').innerText = calculatedTotal;
+
+            const headcount = registrations.length || 1;
+            const customFinal = parseFloat(document.getElementById('bill-final-custom').value);
+            const finalTotal = !isNaN(customFinal) ? customFinal : calculatedTotal;
+
+            document.getElementById('calc-preview-split').innerText = (finalTotal / headcount).toFixed(2);
+        }
+
+        function listenGlobalDatabase() {
+            db.ref('matches').on('value', (snapshot) => {
+                globalMatchesData = snapshot.val() || {};
+                renderSelectorDropdown();
+                
+                // หากไม่มีระบุแมตช์เริ่มต้น ให้หยิบตี้แรกสุดในตารางมาแสดงผล
+                if (!selectedMatchId || !globalMatchesData[selectedMatchId]) {
+                    const keys = Object.keys(globalMatchesData);
+                    selectedMatchId = keys.length > 0 ? keys[0] : '';
+                }
+                
+                if (selectedMatchId && globalMatchesData[selectedMatchId]) {
+                    currentMatch = globalMatchesData[selectedMatchId];
+                    const regObj = currentMatch.registrations || {};
+                    registrations = Object.keys(regObj).map(k => regObj[k]).sort((a,b) => a.timestamp - b.timestamp);
+                } else {
+                    currentMatch = null;
+                    registrations = [];
+                }
+                
+                renderMatchPage();
+                updateLiveCalcPreview();
+            });
+        }
+
+        function renderSelectorDropdown() {
+            const selector = document.getElementById('match-selector');
+            selector.innerHTML = '';
+            const keys = Object.keys(globalMatchesData);
+            
+            if (keys.length === 0) {
+                selector.innerHTML = '<option value="">-- ยังไม่มีการเปิดสร้างตี้แบดใดๆ ในระบบ --</option>';
+                return;
+            }
+            
+            keys.forEach(k => {
+                const m = globalMatchesData[k];
+                const opt = document.createElement('option');
+                opt.value = k;
+                opt.selected = (k === selectedMatchId);
+                opt.innerText = `สนาม: ${m.location} [${m.time} น. - ${m.endTime} น.] (${m.status === 'billing' ? '💰 รอเก็บเงิน' : '🏸 เปิดรับคน'})`;
+                selector.appendChild(opt);
+            });
+        }
+
+        function switchMatch(id) {
+            selectedMatchId = id;
+            if(id && globalMatchesData[id]) {
+                currentMatch = globalMatchesData[id];
+                const regObj = currentMatch.registrations || {};
+                registrations = Object.keys(regObj).map(k => regObj[k]).sort((a,b) => a.timestamp - b.timestamp);
+            } else {
+                currentMatch = null;
+                registrations = [];
+            }
+            renderMatchPage();
+            updateLiveCalcPreview();
+        }
+
         function renderMatchPage() {
-            document.getElementById('panel-create').classList.add('hidden');
+            document.getElementById('panel-create').classList.remove('hidden');
             document.getElementById('panel-manage').classList.add('hidden');
             document.getElementById('badge-admin').classList.add('hidden');
-
-            if (currentMatch && currentMatch.hasActive) {
-                document.getElementById('match-display-info').classList.remove('hidden');
-                document.getElementById('match-status-tag').classList.remove('hidden');
-                document.getElementById('no-match-message').classList.add('hidden');
+            document.getElementById('invoice-display-card').classList.add('hidden');
+            
+            if (currentMatch) {
                 document.getElementById('user-actions').classList.remove('hidden');
                 document.getElementById('player-lists-container').classList.remove('hidden');
 
-                const dateObj = new Date(currentMatch.date);
-                const thaiDate = dateObj.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' });
-
+                const thaiDate = new Date(currentMatch.date).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
                 document.getElementById('match-location').innerText = currentMatch.location;
-                document.getElementById('match-date').innerText = thaiDate;
-                document.getElementById('match-time').innerText = currentMatch.time + ' น.';
+                document.getElementById('match-time').innerText = `${thaiDate} เวลา ${currentMatch.time} ถึง ${currentMatch.endTime} น.`;
                 document.getElementById('match-creator').innerText = currentMatch.creatorName;
-                document.getElementById('match-slots').innerText = `จำกัด ${currentMatch.maxPlayers} คน`;
+                document.getElementById('match-slots').innerText = `จำกัดจำนวนตัวจริง ${currentMatch.maxPlayers} ท่าน`;
+
+                const statusTag = document.getElementById('match-status-tag');
+                if (currentMatch.status === 'billing') {
+                    statusTag.innerText = "💰 เรียกเก็บเงินค่าใช้จ่าย";
+                    statusTag.className = "text-xs bg-amber-100 text-amber-700 px-2.5 py-0.5 rounded-full font-medium";
+                    
+                    document.getElementById('invoice-text-details').innerText = currentMatch.billingSummary || '';
+                    document.getElementById('invoice-display-card').classList.remove('hidden');
+                } else {
+                    statusTag.innerText = "🏸 กำลังเปิดรับสมัครคิว";
+                    statusTag.className = "text-xs bg-green-100 text-green-700 px-2.5 py-0.5 rounded-full font-medium";
+                }
 
                 if (userId === currentMatch.creatorId) {
                     document.getElementById('badge-admin').classList.remove('hidden');
@@ -205,10 +335,10 @@
                 }
                 updatePlayerLists();
             } else {
-                document.getElementById('panel-create').classList.remove('hidden');
-                document.getElementById('match-display-info').classList.add('hidden');
-                document.getElementById('match-status-tag').classList.add('hidden');
-                document.getElementById('no-match-message').classList.remove('hidden');
+                document.getElementById('match-location').innerText = "ยังไม่มีตี้ใดๆ ในระบบ เลือกสร้างได้ด้านบนครับ";
+                document.getElementById('match-time').innerText = "-";
+                document.getElementById('match-creator').innerText = "-";
+                document.getElementById('match-slots').innerText = "-";
                 document.getElementById('user-actions').classList.add('hidden');
                 document.getElementById('player-lists-container').classList.add('hidden');
             }
@@ -220,25 +350,50 @@
             listReal.innerHTML = '';
             listWaiting.innerHTML = '';
 
-            const realPlayers = registrations.slice(0, parseInt(currentMatch.maxPlayers));
-            const waitingPlayers = registrations.slice(parseInt(currentMatch.maxPlayers));
+            const max = parseInt(currentMatch.maxPlayers);
+            const realPlayers = registrations.slice(0, max);
+            const waitingPlayers = registrations.slice(max);
 
-            document.getElementById('count-real').innerText = `${realPlayers.length} / ${currentMatch.maxPlayers} คน`;
+            document.getElementById('count-real').innerText = `${realPlayers.length} / ${max} คน`;
             document.getElementById('count-waiting').innerText = `${waitingPlayers.length} คน`;
 
-            if(realPlayers.length === 0) {
-                listReal.innerHTML = `<li class="text-slate-400 list-none text-center py-2">ยังไม่มีรายชื่อ...</li>`;
+            if (realPlayers.length === 0) {
+                listReal.innerHTML = `<p class="text-slate-400 text-center py-2">ยังไม่มีรายชื่อสมาชิกลงชื่อเข้าคิวประจำคู่</p>`;
             } else {
-                realPlayers.forEach(p => {
-                    listReal.innerHTML += `<li class="py-1 border-b border-dashed border-slate-100 font-medium">${p.name}</li>`;
+                realPlayers.forEach((p, idx) => {
+                    let paymentStatusText = `<span class="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">รอปิดแมตช์</span>`;
+                    
+                    if (currentMatch.status === 'billing') {
+                        if (p.isPaid) {
+                            paymentStatusText = `<span class="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold">✅ ชำระเงินแล้ว</span>`;
+                        } else if (p.paymentSlipBase64) {
+                            paymentStatusText = `
+                                <div class="flex items-center gap-1.5">
+                                    <button onclick="viewSlipFrame('${p.paymentSlipBase64}')" class="text-xs text-blue-600 underline font-medium">🖼️ ส่องสลิป</button>
+                                    ${userId === currentMatch.creatorId ? `<button onclick="approveUserPayment('${p.id}')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-0.5 text-[11px] rounded font-bold transition-colors">ยืนยันรับเงิน</button>` : `<span class="text-xs text-amber-600 font-medium">(รอตรวจ)</span>`}
+                                </div>`;
+                        } else {
+                            paymentStatusText = `<span class="text-xs bg-rose-100 text-rose-600 px-2 py-0.5 rounded-full font-medium">🔴 ค้างชำระเงิน</span>`;
+                        }
+                    }
+
+                    listReal.innerHTML += `
+                        <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                            <span class="font-medium text-slate-700">${idx+1}. ${p.name}</span>
+                            <div>${paymentStatusText}</div>
+                        </div>`;
                 });
             }
 
-            if(waitingPlayers.length === 0) {
-                listWaiting.innerHTML = `<li class="text-slate-400 list-none text-center py-2">ไม่มีคิวตกค้าง...</li>`;
+            if (waitingPlayers.length === 0) {
+                listWaiting.innerHTML = `<p class="text-slate-400 text-center py-1 text-xs">ไม่มีรายการคิวสำรองตกค้าง</p>`;
             } else {
-                waitingPlayers.forEach(p => {
-                    listWaiting.innerHTML += `<li class="py-1 border-b border-dashed border-slate-100 text-amber-700 font-medium">${p.name}</li>`;
+                waitingPlayers.forEach((p, idx) => {
+                    listWaiting.innerHTML += `
+                        <div class="flex justify-between items-center py-1.5 border-b border-slate-50 text-slate-500">
+                            <span>${idx+1}. ${p.name}</span>
+                            <span class="text-xs text-amber-600 font-medium bg-amber-50 px-2 py-0.5 rounded-full">สำรองลำดับ ${idx+1}</span>
+                        </div>`;
                 });
             }
         }
@@ -247,70 +402,155 @@
             const loc = document.getElementById('input-location').value.trim();
             const dt = document.getElementById('input-date').value; 
             const tm = document.getElementById('input-time').value; 
+            const endTm = document.getElementById('input-endtime').value; 
             const mx = document.getElementById('input-max').value;
 
-            if (!loc || !dt || !tm) {
-                alert('กรุณาเลือกสนาม วันที่ และเวลาให้เรียบร้อยก่อนเปิดตี้นะครับ 🐾');
+            if (!loc || !dt || !tm || !endTm) {
+                alert('🚨 กรุณาระบุข้อมูลสถานที่ วันที่ และช่วงเวลาเริ่ม-เวลาจบ ให้ครบถ้วนด้วยนะครับ!');
                 return;
             }
 
+            const newMatchKey = db.ref().child('matches').push().key;
+
             const matchData = {
-                hasActive: true,
+                id: newMatchKey,
+                status: 'active',
                 location: loc,
                 date: dt,
                 time: tm,
+                endTime: endTm,
                 maxPlayers: mx,
                 creatorId: userId,
                 creatorName: displayName,
                 notified2Hr: false
             };
 
-            await db.ref('activeMatch').set(matchData);
-            await db.ref('registrations').set({
-                [userId]: { id: userId, name: displayName, timestamp: Date.now() }
+            await db.ref('matches/' + newMatchKey).set(matchData);
+            await db.ref(`matches/${newMatchKey}/registrations/${userId}`).set({
+                id: userId, name: displayName, timestamp: Date.now()
             });
 
+            selectedMatchId = newMatchKey;
+
             try {
-                const apiUrl = 'https://us-central1-bokbak-badminton.cloudfunctions.net/apiNotifyMatchCreated';
-                await fetch(apiUrl, {
+                await fetch('https://us-central1-bokbak-badminton.cloudfunctions.net/apiNotifyMatchCreated', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ data: matchData })
                 });
-            } catch (e) {
-                console.error("ยิงบอทแจ้งเตือนล้มเหลว:", e);
+            } catch (e) { 
+                console.error("การแจ้งบอทสร้างแมตช์ทำงานล้มเหลว:", e); 
             }
 
-            alert(`✨ เปิดตี้สำเร็จ! ระบบส่งข้อมูลแจ้งเตือนไปยังกลุ่ม LINE แล้วครับ`);
+            alert(`✨ บันทึกการสร้างตี้แบดสำเร็จและยิงแจ้งไลน์เรียบร้อยครับ!`);
         }
 
         async function deleteMatch() {
-            if (!confirm('คุณแน่ใจไหมที่จะปิดแมตช์นี้และล้างรายชื่อทิ้งทั้งหมด? 🗑️')) return;
-            await db.ref('activeMatch').remove();
-            await db.ref('registrations').remove();
-            alert('🗑️ เคลียร์ตี้เรียบร้อยแล้ว');
+            if (!currentMatch) return;
+            // เพิ่มการแจ้งเตือนกดยืนยันตอนจะลบตี้ตามคำขอ
+            if (!confirm('🚨 แจ้งเตือนความปลอดภัย: คุณต้องการที่จะกดลบและยุบตี้แบดมินตันนี้ทิ้งใช่ไหม? ระบบจะยิงข้อความแจ้งเตือนยกเลิกกิจกรรมเข้ากลุ่มไลน์ทันที!')) return;
+            
+            const cacheMatch = { ...currentMatch };
+            await db.ref('matches/' + selectedMatchId).remove();
+            
+            try {
+                await fetch('https://us-central1-bokbak-badminton.cloudfunctions.net/apiNotifyMatchDeleted', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ data: cacheMatch })
+                });
+            } catch(e){ 
+                console.error("API แจ้งเตือนลบข้อมูลพัง:", e); 
+            }
+            
+            selectedMatchId = '';
+            alert('🗑️ ดำเนินการยกเลิกแมตช์และเตือนกลุ่มสมาชิกร่วมรับทราบแล้วครับ');
         }
 
         async function joinMatch() {
-            if (!userId) return;
+            if (!selectedMatchId || !userId) return;
             if (registrations.some(p => p.id === userId)) {
-                alert('คุณได้ลงชื่อในตี้นี้เรียบร้อยแล้วน้า 🐶');
+                alert('คุณลงชื่อรายชื่อในตี้ประจำนัดคู่นี้ไปแล้วน้า 🐶');
                 return;
             }
-            await db.ref('registrations/' + userId).set({
-                id: userId,
-                name: displayName,
-                timestamp: Date.now()
+            await db.ref(`matches/${selectedMatchId}/registrations/${userId}`).set({
+                id: userId, name: displayName, timestamp: Date.now()
             });
-            alert('ลงชื่อเข้าตี้สำเร็จแล้วคร้าบ! 🏸');
+            alert('ลงชื่อต่อคิวสำเร็จแล้วครับ! 🏸');
         }
 
         async function leaveMatch() {
-            if (!userId) return;
-            await db.ref('registrations/' + userId).remove();
-            alert('ยกเลิกคิวให้เรียบร้อยแล้วครับ');
+            if (!selectedMatchId || !userId) return;
+            await db.ref(`matches/${selectedMatchId}/registrations/${userId}`).remove();
+            alert('ลบรายชื่ออกจากรายการคิวเรียบร้อยครับ');
         }
 
+        // 💰 แปลงรูปภาพสลิปที่เลือกให้กลายเป็น String Base64 เพื่อยัดลง Realtime Database เลี่ยงการเช่าพื้นที่ Storage
+        function uploadPaymentSlip() {
+            const fileInput = document.getElementById('input-slip-file');
+            if (!fileInput.files || fileInput.files.length === 0) {
+                alert('กรุณาเลือกไฟล์ภาพสลิปใบโอนเงินของคุณก่อนกดส่งคิวตรวจน้า');
+                return;
+            }
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+            reader.onloadend = async function() {
+                const base64String = reader.result;
+                await db.ref(`matches/${selectedMatchId}/registrations/${userId}/paymentSlipBase64`).set(base64String);
+                alert('📤 อัปโหลดภาพสลิปหลักฐานสำเร็จ! ส่งข้อมูลไปยังหัวหน้าตี้เพื่อรอตรวจเช็กความถูกต้องแล้วครับ');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function approveUserPayment(uId) {
+            await db.ref(`matches/${selectedMatchId}/registrations/${uId}/isPaid`).set(true);
+            alert('ยืนยันประวัติการชำระเงินของสมาชิกรายดังกล่าวเรียบร้อย');
+        }
+
+        function viewSlipFrame(base64Src) {
+            document.getElementById('modal-img-frame').src = base64Src;
+            document.getElementById('image-modal').classList.remove('hidden');
+        }
+
+        // ฟังก์ชันคำนวณเงินทั้งหมดและยิงแจ้งเรียกเก็บไปยัง LINE
+        async function triggerBillingSubmit() {
+            const rate = parseFloat(document.getElementById('bill-court-rate').value) || 0;
+            const hrs = parseFloat(document.getElementById('bill-hours').value) || 0;
+            const courts = parseFloat(document.getElementById('bill-court-count').value) || 0;
+            const balls = parseFloat(document.getElementById('bill-shuttlecock').value) || 0;
+            const bank = document.getElementById('bill-bank').value.trim();
+
+            const calculatedTotal = (rate * hrs * courts) + balls;
+            const customFinal = parseFloat(document.getElementById('bill-final-custom').value);
+            const finalTotal = !isNaN(customFinal) ? customFinal : calculatedTotal;
+
+            const totalPeople = registrations.length || 1;
+            const perHead = (finalTotal / totalPeople).toFixed(2);
+
+            if(!bank) {
+                alert('⚠️ กรุณากรอกระบุเลขที่บัญชีรับเงินโอนเงินคืนของหัวตี้ด้วยนะครับ');
+                return;
+            }
+
+            const summaryStr = `🏟️ สนาม: ${currentMatch.location}\n⏰ เวลาตี: ${currentMatch.time} - ${currentMatch.endTime} น.\n📊 ยอดสุทธิค่าคอร์ด + ค่าลูกแบด: ${finalTotal} บาท\n👥 หารจำนวนคนร่วมชะตากรรม: ${totalPeople} คน\n💵 ตกหารเฉลี่ยคนละ: ${perHead} บาท`;
+
+            await db.ref(`matches/${selectedMatchId}/status`).set('billing');
+            await db.ref(`matches/${selectedMatchId}/billingSummary`).set(summaryStr);
+
+            try {
+                await fetch('https://us-central1-bokbak-badminton.cloudfunctions.net/apiNotifyBilling', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ data: { matchId: selectedMatchId, summaryText: summaryStr, bankInfo: bank } })
+                });
+                alert('📢 ประกาศใบแจ้งบิลเก็บเงิน และอัปเดตสถานะเข้าไลน์กลุ่มพรรคพวกเรียบร้อย!');
+            } catch(e) { 
+                console.error("เรียกเก็บเงินล้มเหลว:", e); 
+            }
+        }
+
+        // ผูก Event Listener ทันทีเมื่อเปิดตัวแอปพลิเคชัน
+        setupLiveBillingCalculators();
         initLiff();
     </script>
 </body>
