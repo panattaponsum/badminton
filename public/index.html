@@ -195,7 +195,11 @@
                     liff.login(); 
                 }
             } catch (error) { 
-                console.error('LIFF Init Error', error); 
+                console.error(
+                    'LIFF Init Error: unable to load LINE LIFF resources. This is usually a temporary network, ad-blocker, or LINE CDN issue.',
+                    error
+                );
+                alert('ไม่สามารถเริ่มต้น LINE LIFF ได้ในขณะนี้ กรุณาตรวจสอบเครือข่าย ปิดตัวบล็อกโฆษณา/ตัวกรองเว็บ แล้วลองเปิดใหม่อีกครั้ง');
             }
         }
 
