@@ -1,5 +1,6 @@
 const { onValueCreated } = require("firebase-functions/v2/database");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
+const functions = require("firebase-functions/v1");
 const admin = require("firebase-admin");
 const axios = require("axios");
 
@@ -15,8 +16,11 @@ const LINE_GROUP_ID = "รหัสห้องกลุ่มไลน์ขอ
 /**
  * 🚀 ฟังก์ชันที่ 1: ตรวจจับเมื่อมีการสร้างตี้ใหม่ -> ยิง Flex Message หรูเข้ากลุ่ม LINE ทันที
  */
-exports.onMatchCreated = onValueCreated("/activeMatch", async (event) =>  {
-    const matchData = event.data.val();
+/**
+ * 🚀 ฟังก์ชันที่ 1: ตรวจจับเมื่อมีการสร้างตี้ใหม่ (เวอร์ชัน v1 ปลุกง่าย หาเจอง่าย)
+ */
+exports.onMatchCreated = functions.database.ref("/activeMatch").onCreate(async (snapshot, context) => {
+    const matchData = snapshot.val();
     if (!matchData || !matchData.hasActive) return;
 
     // แปลงฟอร์แมตวันที่ให้อ่านง่าย
