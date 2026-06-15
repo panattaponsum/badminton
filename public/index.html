@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ก๊วนบ๊อกแบ๊ก แบดมินตัน 🏸</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+</head>
+<body class="bg-slate-100 font-sans min-h-screen pb-10">
+
+    <div class="bg-gradient-to-r content-center from-green-500 to-emerald-600 text-white py-6 px-4 shadow-md text-center rounded-b-3xl">
+        <h1 class="text-2xl font-bold flex justify-center items-center gap-2">
+            🏸 ก๊วนบ๊อกแบ๊ก แบดมินตัน 🐾
+        </h1>
+        <p class="text-sm opacity-90 mt-1">ระบบลงชื่อคิวตี้แบดอัตโนมัติ</p>
+    </div>
+
+    <div id="user-profile" class="max-w-md mx-auto mt-4 px-4 hidden">
+        <div class="bg-white p-3 rounded-2xl shadow-sm flex items-center gap-3 border border-slate-200">
+            <img id="user-avatar" class="w-12 h-12 rounded-full border-2 border-green-500" src="" alt="Avatar">
+            <div>
+                <p class="text-xs text-slate-400">ยินดีต้อนรับ</p>
+                <p id="user-name" class="font-bold text-slate-700">กำลังโหลดโปรไฟล์...</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-md mx-auto mt-4 px-4">
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+            <h2 class="text-lg font-bold text-slate-800 border-b pb-2 mb-3">📍 รายละเอียดแมตช์ล่าสุด</h2>
+            <div class="space-y-2 text-sm text-slate-600">
+                <p><strong>สนาม:</strong> <span id="match-location">กำลังโหลดข้อมูล...</span></p>
+                <p><strong>วันที่:</strong> <span id="match-date">-</span></p>
+                <p><strong>เวลา:</strong> <span id="match-time">-</span></p>
+                <p><strong>รับสมัคร:</strong> <span id="match-slots" class="text-green-600 font-semibold">-</span></p>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-md mx-auto mt-5 px-4 flex gap-3">
+        <button id="btn-join" onclick="joinMatch()" class="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-green-200 transition-all text-center">
+            🙋‍♂️ ลงชื่อเข้าตี้
+        </button>
+        <button id="btn-leave" onclick="leaveMatch()" class="flex-1 bg-rose-500 hover:bg-rose-600 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-rose-200 transition-all text-center">
+            ❌ ยกเลิกคิว
+        </button>
+    </div>
+
+    <div class="max-w-md mx-auto mt-6 px-4 space-y-4">
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="font-bold text-emerald-600 border-b pb-2 mb-2 flex justify-between">
+                <span>🔥 รายชื่อตัวจริง</span>
+                <span id="count-real" class="text-sm text-slate-500">0 คน</span>
+            </h3>
+            <ol id="list-real" class="list-decimal list-inside space-y-1.5 text-slate-700 text-sm">
+                <li class="text-slate-400 list-none text-center py-2">ยังไม่มีรายชื่อ...</li>
+            </ol>
+        </div>
+
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="font-bold text-amber-600 border-b pb-2 mb-2 flex justify-between">
+                <span>⏳ รายชื่อคิวสำรอง</span>
+                <span id="count-waiting" class="text-sm text-slate-500">0 คน</span>
+            </h3>
+            <ol id="list-waiting" class="list-decimal list-inside space-y-1.5 text-slate-700 text-sm">
+                <li class="text-slate-400 list-none text-center py-2">ไม่มีคิวตกค้าง...</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        // เปลี่ยนเป็น LIFF ID ของคุณ
+        const LIFF_ID = '2010400559-X4eBS5zg'; 
+        
+        let userId = '';
+        let displayName = '';
+        let pictureUrl = '';
+
+        // ข้อมูลจำลองสำหรับหน้าเว็บ (เมื่อเชื่อมต่อ Firebase Realtime/Firestore สามารถดึงค่าจริงมาใส่ได้)
+        let matchDetails = {
+            id: 'match_001',
+            location: 'สนามแบดมินตันบ๊อกแบ๊ก สเตเดียม',
+            date: 'วันเสาร์นี้',
+            time: '18:00 - 20:00 น.',
+            maxPlayers: 6
+        };
+
+        let registrations = []; // เก็บคิวคนลงชื่อ
+
+        async function initLiff() {
+            try {
+                await liff.init({ liffId: LIFF_ID });
+                if (liff.isLoggedIn()) {
+                    getUserProfile();
+                } else {
+                    liff.login();
+                }
+            } catch (error) {
+                console.error('LIFF Initialization failed', error);
+            }
+        }
+
+        async function getUserProfile() {
+            const profile = await liff.getProfile();
+            userId = profile.userId;
+            displayName = profile.displayName;
+            pictureUrl = profile.pictureUrl;
+
+            document.getElementById('user-name').innerText = displayName;
+            document.getElementById('user-avatar').src = pictureUrl || 'https://cdn-icons-png.flaticon.com/512/1077/1077114.png';
+            document.getElementById('user-profile').classList.remove('hidden');
+            
+            renderMatchInfo();
+        }
+
+        function renderMatchInfo() {
+            document.getElementById('match-location').innerText = matchDetails.location;
+            document.getElementById('match-date').innerText = matchDetails.date;
+            document.getElementById('match-time').innerText = matchDetails.time;
+            document.getElementById('match-slots').innerText = `จำกัด ${matchDetails.maxPlayers} คน`;
+            updatePlayerLists();
+        }
+
+        function updatePlayerLists() {
+            const listReal = document.getElementById('list-real');
+            const listWaiting = document.getElementById('list-waiting');
+            
+            listReal.innerHTML = '';
+            listWaiting.innerHTML = '';
+
+            const realPlayers = registrations.slice(0, matchDetails.maxPlayers);
+            const waitingPlayers = registrations.slice(matchDetails.maxPlayers);
+
+            document.getElementById('count-real').innerText = `${realPlayers.length} / ${matchDetails.maxPlayers} คน`;
+            document.getElementById('count-waiting').innerText = `${waitingPlayers.length} คน`;
+
+            if(realPlayers.length === 0) {
+                listReal.innerHTML = `<li class="text-slate-400 list-none text-center py-2">ยังไม่มีรายชื่อ...</li>`;
+            } else {
+                realPlayers.forEach(p => {
+                    listReal.innerHTML += `<li class="py-1 border-b border-dashed border-slate-100 font-medium">${p.name}</li>`;
+                });
+            }
+
+            if(waitingPlayers.length === 0) {
+                listWaiting.innerHTML = `<li class="text-slate-400 list-none text-center py-2">ไม่มีคิวตกค้าง...</li>`;
+            } else {
+                waitingPlayers.forEach(p => {
+                    listWaiting.innerHTML += `<li class="py-1 border-b border-dashed border-slate-100 text-amber-700 font-medium">${p.name}</li>`;
+                });
+            }
+        }
+
+        function joinMatch() {
+            if (!userId) return;
+            // เช็กว่าเคยลงชื่อไปหรือยัง
+            if (registrations.some(p => p.id === userId)) {
+                alert('คุณได้ลงชื่อในตี้นี้เรียบร้อยแล้วน้า 🐶');
+                return;
+            }
+            registrations.push({ id: userId, name: displayName });
+            updatePlayerLists();
+            alert('ลงชื่อเข้าตี้สำเร็จแล้วคร้าบ! 🏸');
+        }
+
+        function leaveMatch() {
+            if (!userId) return;
+            const index = registrations.findIndex(p => p.id === userId);
+            if (index === -1) {
+                alert('ไม่พบชื่อคุณในตี้นี้อยู่แล้วครับผม');
+                return;
+            }
+            registrations.splice(index, 1);
+            updatePlayerLists();
+            alert('ยกเลิกคิวให้เรียบร้อยแล้วครับ');
+        }
+
+        // เริ่มทำงานเมื่อเปิดหน้าเว็บ
+        initLiff();
+    </script>
+</body>
+</html>
