@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval'; data: blob:;">
     <title>ก๊วนบ๊อกแบ๊ก แบดมินตัน 🏸</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
@@ -327,6 +326,7 @@
                     statusTag.className = "text-xs bg-green-100 text-green-700 px-2.5 py-0.5 rounded-full font-medium";
                 }
 
+                // 🌟 [จุดแก้ไขหลัก] ตรวจสอบสิทธิ์ว่า User คนนี้เป็นเจ้าของตี้ที่ "กำลังเลือกดูอยู่ปัจจุบัน" หรือไม่แยกขาดรายแมตช์
                 if (userId === currentMatch.creatorId) {
                     document.getElementById('badge-admin').classList.remove('hidden');
                     document.getElementById('panel-manage').classList.remove('hidden');
@@ -384,7 +384,7 @@
             }
 
             if (waitingPlayers.length === 0) {
-                listWaiting.innerHTML = `<p class="text-slate-400 text-center py-1 text-xs">ไม่มีรายการคิวสำรองตกค้าง</p>';
+                listWaiting.innerHTML = `<p class="text-slate-400 text-center py-1 text-xs">ไม่มีรายการคิวสำรองตกค้าง</p>`;
             } else {
                 waitingPlayers.forEach((p, idx) => {
                     listWaiting.innerHTML += `
