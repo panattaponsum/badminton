@@ -185,19 +185,19 @@
         let currentMatch = null;
         let registrations = [];
 
-        async function initLiff() {
-            try {
-                await liff.init({ liffId: LIFF_ID });
-                if (liff.isLoggedIn()) { 
-                    getUserProfile(); 
-                } else { 
-                    liff.login(); 
-                }
-            } catch (error) { 
-                console.error('LIFF Init Error', error); 
-            }
+       async function initLiff() {
+    try {
+        await liff.init({ liffId: LIFF_ID });
+        if (liff.isLoggedIn()) { 
+            getUserProfile(); 
+        } else { 
+            // แนะนำให้ส่ง redirectUri กำกับเข้าไปตอนสั่ง login เพื่อบังคับทิศทางให้แน่นอน
+            liff.login({ redirectUri: 'https://bokbak-badminton.web.app' }); 
         }
-
+    } catch (error) { 
+        console.error('LIFF Init Error', error); 
+    }
+}
         async function getUserProfile() {
             const profile = await liff.getProfile();
             userId = profile.userId;
