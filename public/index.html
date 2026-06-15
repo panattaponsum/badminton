@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ก๊วนบ๊อกแบ๊ก แบดมินตัน 🏸</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/assets/tailwind-fallback.css">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
@@ -342,6 +343,16 @@
             }
         }
 
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, (char) => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            }[char]));
+        }
+
         function updatePlayerLists() {
             const listReal = document.getElementById('list-real');
             const listWaiting = document.getElementById('list-waiting');
@@ -363,23 +374,22 @@
                     
                     if (currentMatch.status === 'billing') {
                         if (p.isPaid) {
-                            paymentStatusText = `<span class="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold">✅ ชำระเงินแล้ว</span>`;
+                            paymentStatusText = '<span class="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold">✅ ชำระเงินแล้ว</span>';
                         } else if (p.paymentSlipBase64) {
-                            paymentStatusText = `
-                                <div class="flex items-center gap-1.5">
-                                    <button onclick="viewSlipFrame('${p.paymentSlipBase64}')" class="text-xs text-blue-600 underline font-medium">🖼️ ส่องสลิป</button>
-                                    ${userId === currentMatch.creatorId ? `<button onclick="approveUserPayment('${p.id}')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-0.5 text-[11px] rounded font-bold transition-colors">ยืนยันรับเงิน</button>` : `<span class="text-xs text-amber-600 font-medium">(รอตรวจ)</span>`}
-                                </div>`;
+                            const slipButton = '<button onclick="viewSlipFrame(\'' + encodeURIComponent(p.paymentSlipBase64) + '\')" class="text-xs text-blue-600 underline font-medium">🖼️ ส่องสลิป</button>';
+                            const adminAction = userId === currentMatch.creatorId
+                                ? '<button onclick="approveUserPayment(\'' + escapeHtml(p.id) + '\')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-0.5 text-[11px] rounded font-bold transition-colors">ยืนยันรับเงิน</button>'
+                                : '<span class="text-xs text-amber-600 font-medium">(รอตรวจ)</span>';
+                            paymentStatusText = '<div class="flex items-center gap-1.5">' + slipButton + adminAction + '</div>';
                         } else {
-                            paymentStatusText = `<span class="text-xs bg-rose-100 text-rose-600 px-2 py-0.5 rounded-full font-medium">🔴 ค้างชำระเงิน</span>`;
+                            paymentStatusText = '<span class="text-xs bg-rose-100 text-rose-600 px-2 py-0.5 rounded-full font-medium">🔴 ค้างชำระเงิน</span>';
                         }
                     }
 
-                    listReal.innerHTML += `
-                        <div class="flex justify-between items-center py-2 border-b border-slate-100">
-                            <span class="font-medium text-slate-700">${idx+1}. ${p.name}</span>
-                            <div>${paymentStatusText}</div>
-                        </div>`;
+                    listReal.innerHTML += '<div class="flex justify-between items-center py-2 border-b border-slate-100">'
+                        + '<span class="font-medium text-slate-700">' + (idx + 1) + '. ' + escapeHtml(p.name) + '</span>'
+                        + '<div>' + paymentStatusText + '</div>'
+                        + '</div>';
                 });
             }
 
@@ -387,11 +397,11 @@
                 listWaiting.innerHTML = `<p class="text-slate-400 text-center py-1 text-xs">ไม่มีรายการคิวสำรองตกค้าง</p>`;
             } else {
                 waitingPlayers.forEach((p, idx) => {
-                    listWaiting.innerHTML += `
-                        <div class="flex justify-between items-center py-1.5 border-b border-slate-50 text-slate-500">
-                            <span>${idx+1}. ${p.name}</span>
-                            <span class="text-xs text-amber-600 font-medium bg-amber-50 px-2 py-0.5 rounded-full">สำรองลำดับ ${idx+1}</span>
-                        </div>`;
+                    const queueNumber = idx + 1;
+                    listWaiting.innerHTML += '<div class="flex justify-between items-center py-1.5 border-b border-slate-50 text-slate-500">'
+                        + '<span>' + queueNumber + '. ' + escapeHtml(p.name) + '</span>'
+                        + '<span class="text-xs text-amber-600 font-medium bg-amber-50 px-2 py-0.5 rounded-full">สำรองลำดับ ' + queueNumber + '</span>'
+                        + '</div>';
                 });
             }
         }
@@ -504,7 +514,7 @@
         }
 
         function viewSlipFrame(base64Src) {
-            document.getElementById('modal-img-frame').src = base64Src;
+            document.getElementById('modal-img-frame').src = decodeURIComponent(base64Src);
             document.getElementById('image-modal').classList.remove('hidden');
         }
 
