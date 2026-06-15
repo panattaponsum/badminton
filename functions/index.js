@@ -3,7 +3,9 @@ const { onSchedule } = require("firebase-functions/v2/scheduler");
 const admin = require("firebase-admin");
 const axios = require("axios");
 
-admin.initializeApp();
+admin.initializeApp({
+    databaseURL: "https://bokbak-badminton-default-rtdb.firebaseio.com"
+});
 const db = admin.database();
 
 // 🚨 ใส่ค่า Token และ Group ID ของคุณตรงนี้
@@ -13,7 +15,10 @@ const LINE_GROUP_ID = "รหัสห้องกลุ่มไลน์ขอ
 /**
  * 🚀 ฟังก์ชันที่ 1: ตรวจจับเมื่อมีการสร้างตี้ใหม่ -> ยิง Flex Message หรูเข้ากลุ่ม LINE ทันที
  */
-exports.onMatchCreated = onValueCreated("/activeMatch", async (event) => {
+xports.onMatchCreated = onValueCreated({
+    instance: "bokbak-badminton-default-rtdb", // ชื่อถังข้อมูลของคุณ
+    ref: "/activeMatch"
+}, async (event) => {
     const matchData = event.data.val();
     if (!matchData || !matchData.hasActive) return;
 
