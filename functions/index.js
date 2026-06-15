@@ -163,14 +163,15 @@ exports.apiNotifyBilling = functions.https.onRequest(async (req, res) => {
 exports.check2HourReminder = onSchedule("every 15 minutes", async (event) => {
     const snapshot = await db.ref("matches").get();
     const matches = snapshot.val() || {};
-    const now = new Date();
+   const nowThailand = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Bangkok" }));
 
     for (let key in matches) {
         const match = matches[key];
         if (match.status !== 'active' || match.notified2Hr) continue;
 
-        const matchDateTime = new Date(`${match.date}T${match.time}:00`);
-        const timeDiffMs = matchDateTime - now;
+        // 🌟 แปลงเวลาของตี้แบดให้เป็นรูปแบบวันที่ที่ถูกต้อง
+const matchDateTime = new Date(`${match.date}T${match.time}:00`);
+        const timeDiffMs = matchDateTime - nowThailand;
         const twoHoursInMs = 2 * 60 * 60 * 1000;
 
         if (timeDiffMs > 0 && timeDiffMs <= twoHoursInMs) {
