@@ -11,8 +11,8 @@ admin.initializeApp({
 const db = admin.database();
 
 // 🚨 ใส่ค่า Token และ Group ID ของคุณตรงนี้
-const LINE_ACCESS_TOKEN = "ไอ้ตัวยาวๆ_CHANNEL_ACCESS_TOKEN_ของคุณ";
-const LINE_GROUP_ID = "รหัสห้องกลุ่มไลน์ของคุณ_ที่ขึ้นต้นด้วย_C..."; 
+const LINE_ACCESS_TOKEN = "fgXW8VjBTGRcvHOHDMWH0edxxnb4YQ2OpIXvooT8IG3yfwvExyYyuYc/+dBwEqYS6poYGnaMCO6KoGVGjIGBonCGNorv/18cSqQJ2dgMm55EALWchtAaYNCcQV7JFEOrDdSXO2Auarc84XSuvFnu9AdB04t89/1O/w1cDnyilFU=";
+const LINE_GROUP_ID = "Ce835d108875b2dbf5265af2cf5a9367b"; 
 exports.webhook = functions.https.onRequest((req, res) => {
     const events = req.body.events;
     if (events && events.length > 0) {
