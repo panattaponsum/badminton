@@ -243,7 +243,7 @@
             }
         }
 
-        async function createNewMatch() {
+       async function createNewMatch() {
             const loc = document.getElementById('input-location').value.trim();
             const dt = document.getElementById('input-date').value; 
             const tm = document.getElementById('input-time').value; 
@@ -262,14 +262,26 @@
                 maxPlayers: mx,
                 creatorId: userId,
                 creatorName: displayName,
-                notified2Hr: false // มาร์กหัวข้อยังไม่ได้แจ้งเตือน 2 ชม.
+                notified2Hr: false
             };
 
-            // อัปเดตขึ้นคลาวด์ Firebase
+            // 1. บันทึกข้อมูลลงฐานข้อมูลเรียลไทม์
             await db.ref('activeMatch').set(matchData);
             await db.ref('registrations').set({
                 [userId]: { id: userId, name: displayName, timestamp: Date.now() }
             });
+
+            // 2. ⚡ ยิงสัญญาณตรงไปที่หลังบ้านเพื่อให้บอทส่งข้อความเข้ากลุ่ม LINE ทันที (ไม่ต้องง้อระบบส่องของ Google)
+            try {
+                // เราจะเรียกใช้ URL ฟังก์ชันใหม่ที่เรากำลังจะสร้างด้านล่างนี้
+                await fetch('https://onmatchcreated-moomretpzq-uc.a.run.app', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ data: matchData })
+                });
+            } catch (e) {
+                console.error("ส่งแจ้งเตือนเข้าไลน์กลุ่มผ่านสิทธิ์ตรงล้มเหลว:", e);
+            }
 
             alert(`✨ เปิดตี้สำเร็จ! ระบบส่งข้อมูลแจ้งเตือนไปยังกลุ่ม LINE แล้วครับ`);
         }
