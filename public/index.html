@@ -14,7 +14,7 @@
         <h1 class="text-2xl font-bold flex justify-center items-center gap-2">
             🏸 ก๊วนบ๊อกแบ๊ก แบดมินตัน 🐾
         </h1>
-        <p class="text-sm opacity-90 mt-1">ระบบลงชื่อตีแบด</p>
+        <p class="text-sm opacity-90 mt-1">ระบบลงชื่อคิวตี้แบดอัตโนมัติ</p>
     </div>
 
     <!-- ส่วนแสดงโปรไฟล์ผู้ใช้งาน LINE -->
@@ -43,12 +43,14 @@
                 </div>
                 <div class="grid grid-cols-2 gap-2">
                     <div>
-                        <label class="block text-xs opacity-70 mb-1">วันที่</label>
-                        <input type="text" id="input-date" placeholder="เช่น วันเสาร์นี้, 20 มิ.ย." class="w-full bg-slate-600 border border-slate-500 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-green-400">
+                        <label class="block text-xs opacity-70 mb-1">เลือกวันที่ (ปฏิทิน)</label>
+                        <!-- เปลี่ยนเป็นแบบปฏิทินปี 2026 -->
+                        <input type="date" id="input-date" class="w-full bg-slate-600 border border-slate-500 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-green-400">
                     </div>
                     <div>
-                        <label class="block text-xs opacity-70 mb-1">เวลา</label>
-                        <input type="text" id="input-time" placeholder="เช่น 18:00 - 20:00 น." class="w-full bg-slate-600 border border-slate-500 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-green-400">
+                        <label class="block text-xs opacity-70 mb-1">เวลาเริ่มตี</label>
+                        <!-- เปลี่ยนเป็นแบบเลือกเวลาดิจิทัล -->
+                        <input type="time" id="input-time" class="w-full bg-slate-600 border border-slate-500 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-green-400">
                     </div>
                 </div>
                 <div>
@@ -56,7 +58,7 @@
                     <input type="number" id="input-max" value="6" min="1" class="w-full bg-slate-600 border border-slate-500 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-green-400">
                 </div>
                 <button onclick="createNewMatch()" class="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold py-2.5 rounded-xl shadow-md text-sm transition-all mt-2">
-                    🚀 ยืนยันเปิดตี้แมตช์นี้ (คุณจะเป็นหัวหน้าตี้)
+                    🚀 ยืนยันเปิดตี้และส่งแจ้งเตือนเข้ากลุ่ม LINE
                 </button>
             </div>
         </div>
@@ -81,8 +83,8 @@
             </h2>
             <div id="match-display-info" class="space-y-2 text-sm text-slate-600">
                 <p><strong>สนาม:</strong> <span id="match-location">กำลังโหลดข้อมูล...</span></p>
-                <p><strong>วันที่:</strong> <span id="match-date">-</span></p>
-                <p><strong>เวลา:</strong> <span id="match-time">-</span></p>
+                <p><strong>วันที่แข่ง:</strong> <span id="match-date">-</span></p>
+                <p><strong>เวลาเริ่ม:</strong> <span id="match-time">-</span></p>
                 <p><strong>ผู้สร้างตี้:</strong> <span id="match-creator" class="text-amber-600 font-semibold">-</span></p>
                 <p><strong>รับสมัคร:</strong> <span id="match-slots" class="text-green-600 font-semibold">-</span></p>
             </div>
@@ -132,7 +134,6 @@
         let displayName = '';
         let pictureUrl = '';
 
-        // โครงสร้างตี้เริ่มต้น (ถ้าไม่มีข้อมูลในระบบจะถือว่าเป็นตี้ว่าง)
         let currentMatch = JSON.parse(localStorage.getItem('bokbak_match')) || { hasActive: false };
         let registrations = JSON.parse(localStorage.getItem('bokbak_regs')) || [];
 
@@ -163,35 +164,34 @@
         }
 
         function renderMatchPage() {
-            // ซ่อนแผงควบคุมหลักทั้งหมดไว้ก่อนเพื่อตรวจสอบสถานะใหม่
             document.getElementById('panel-create').classList.add('hidden');
             document.getElementById('panel-manage').classList.add('hidden');
             document.getElementById('badge-admin').classList.add('hidden');
 
             if (currentMatch && currentMatch.hasActive) {
-                // แสดงตารางข้อมูลตี้แบบปกติ
                 document.getElementById('match-display-info').classList.remove('hidden');
                 document.getElementById('match-status-tag').classList.remove('hidden');
                 document.getElementById('no-match-message').classList.add('hidden');
                 document.getElementById('user-actions').classList.remove('hidden');
                 document.getElementById('player-lists-container').classList.remove('hidden');
 
+                // จัดฟอร์แมตการแสดงผลวันที่ให้คนไทยอ่านง่ายขึ้น
+                const dateObj = new Date(currentMatch.date);
+                const thaiDate = dateObj.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' });
+
                 document.getElementById('match-location').innerText = currentMatch.location;
-                document.getElementById('match-date').innerText = currentMatch.date;
-                document.getElementById('match-time').innerText = currentMatch.time;
+                document.getElementById('match-date').innerText = thaiDate;
+                document.getElementById('match-time').innerText = currentMatch.time + ' น.';
                 document.getElementById('match-creator').innerText = currentMatch.creatorName;
                 document.getElementById('match-slots').innerText = `จำกัด ${currentMatch.maxPlayers} คน`;
 
-                // 👑 เช็กว่าถ้า LINE ID ของคนเปิดแอป ตรงกับ ID ของคนสร้างตี้แมตช์นี้
                 if (userId === currentMatch.creatorId) {
-                    document.getElementById('badge-admin').classList.remove('hidden'); // แสดงป้ายราชา
-                    document.getElementById('panel-manage').classList.remove('hidden'); // แสดงกล่องกดลบตี้
+                    document.getElementById('badge-admin').classList.remove('hidden');
+                    document.getElementById('panel-manage').classList.remove('hidden');
                 }
                 updatePlayerLists();
             } else {
-                // ถ้าไม่มีตี้เปิดอยู่ -> โชว์กล่องฟอร์มให้ "ใครก็ได้" มากรอกเปิดตี้คนแรก
                 document.getElementById('panel-create').classList.remove('hidden');
-                
                 document.getElementById('match-display-info').classList.add('hidden');
                 document.getElementById('match-status-tag').classList.add('hidden');
                 document.getElementById('no-match-message').classList.remove('hidden');
@@ -230,19 +230,18 @@
             }
         }
 
-        // ฟังก์ชันเปิดตี้แมตช์ใหม่ (ผูกมัดความเป็นแอดมินกับผู้กดทันที)
-        function createNewMatch() {
+        // ฟังก์ชันสร้างแมตช์ใหม่
+        async function createNewMatch() {
             const loc = document.getElementById('input-location').value.trim();
-            const dt = document.getElementById('input-date').value.trim();
-            const tm = document.getElementById('input-time').value.trim();
+            const dt = document.getElementById('input-date').value; // ได้ค่า YYYY-MM-DD จากปฏิทิน
+            const tm = document.getElementById('input-time').value; // ได้ค่า HH:MM จากนาฬิกา
             const mx = document.getElementById('input-max').value;
 
             if (!loc || !dt || !tm) {
-                alert('กรุณากรอกข้อมูลให้ครบถ้วนก่อนเปิดตี้ใหม่น้าา 🐾');
+                alert('กรุณาเลือกสนาม วันที่ และเวลาให้เรียบร้อยก่อนเปิดตี้นะครับ 🐾');
                 return;
             }
 
-            // บันทึกข้อมูลตี้ พร้อมระบุว่าใคร (userId/displayName) เป็นเจ้าของ
             currentMatch = {
                 hasActive: true,
                 location: loc,
@@ -253,19 +252,28 @@
                 creatorName: displayName
             };
 
-            // คนเปิดตี้จะโดนดึงลงชื่อเข้าตี้อันดับที่ 1 ให้โดยอัตโนมัติเพื่อความสะดวก
             registrations = [{ id: userId, name: displayName }]; 
             
             localStorage.setItem('bokbak_match', JSON.stringify(currentMatch));
             localStorage.setItem('bokbak_regs', JSON.stringify(registrations));
 
+            // ⚡ ส่วนทดสอบการส่งข้อมูลไปหลังบ้านเพื่อให้บอททักเข้ากลุ่มไลน์ (ส่งหา Firebase HTTP ฟังก์ชันที่ตั้งไว้)
+            try {
+                await fetch('https://linewebhook-moomretpzq-uc.a.run.app/api/notify-create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ match: currentMatch })
+                });
+            } catch (e) {
+                console.log("บันทึกตี้ในเครื่องสำเร็จแล้ว แต่ขาดระบบหลังบ้านเชื่อมกลุ่มไลน์");
+            }
+
             renderMatchPage();
-            alert(`✨ เปิดตี้สำเร็จ! ตอนนี้คุณคือหัวหน้าตี้แมตช์นี้ครับ`);
+            alert(`✨ เปิดตี้สำเร็จ! ระบบบันทึกข้อมูลและล็อกคิวที่ 1 ให้คุณเรียบร้อยครับ`);
         }
 
-        // ฟังก์ชันลบตี้ (จะผ่านเงื่อนไขต้องเป็นคนสร้างเท่านั้นตามฟังก์ชันเรนเดอร์)
         function deleteMatch() {
-            if (!confirm('คุณแน่ใจไหมที่จะปิดแมตช์นี้และล้างรายชื่อทิ้งทั้งหมดเพื่อเปิดทางให้ตี้ถัดไป? 🗑️')) return;
+            if (!confirm('คุณแน่ใจไหมที่จะปิดแมตช์นี้และล้างรายชื่อทิ้งทั้งหมด? 🗑️')) return;
 
             currentMatch = { hasActive: false };
             registrations = [];
@@ -274,7 +282,7 @@
             localStorage.setItem('bokbak_regs', JSON.stringify(registrations));
 
             renderMatchPage();
-            alert('🗑️ เคลียร์ตี้เรียบร้อยแล้ว ระบบเปิดว่างให้คนต่อไปมาสร้างได้แล้วครับ');
+            alert('🗑️ เคลียร์ตี้เรียบร้อยแล้ว');
         }
 
         function joinMatch() {
