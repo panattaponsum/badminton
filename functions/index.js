@@ -21,191 +21,179 @@ exports.webhook = functions.https.onRequest((req, res) => {
 // 🚀 1. API แจ้งเตือนเมื่อมีการสร้างตี้ใหม่
 exports.apiNotifyMatchCreated = functions.https.onRequest(async (req, res) => {
     res.set('Access-Control-Allow-Origin', '*');
-    res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.set('Access-Control-Allow-Headers', 'Content-Type');
 
     if (req.method === 'OPTIONS') {
-        res.sendStatus(204);
-        return;
+        return res.status(204).send('');
     }
 
-    try {
-        const match = req.body && req.body.data;
-        if (!match) {
-            res.status(400).send({ error: "missing match data" });
-            return;
-        }
-        const thaiDate = new Date(match.date).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
-        const flexMessage = {
-            type: "flex",
-            altText: "🏸 มีตี้แบดมินตันเปิดใหม่จ้า 🐾",
-            contents: {
-                type: "bubble",
-                body: {
-                    type: "box",
-                    layout: "vertical",
-                    contents: [
-                        { type: "text", text: "🏸 ก๊วนบ๊อกแบ๊ก แบดมินตัน 🐾", weight: "bold", color: "#1DB954", size: "sm" },
-                        { type: "text", text: "เปิดนัดตีแบดมินตันตี้ใหม่!", weight: "bold", size: "xl", margin: "md" },
-                        {
-                            type: "box", layout: "vertical", margin: "lg", spacing: "sm", contents: [
-                                { type: "box", layout: "baseline", spacing: "sm", contents: [{ type: "text", text: "สนาม", color: "#aaaaaa", size: "sm", flex: 2 }, { type: "text", text: match.location, wrap: true, color: "#666666", size: "sm", flex: 5 }] },
-                                { type: "box", layout: "baseline", spacing: "sm", contents: [{ type: "text", text: "วันที่ตี", color: "#aaaaaa", size: "sm", flex: 2 }, { type: "text", text: thaiDate, wrap: true, color: "#666666", size: "sm", flex: 5 }] },
-                                { type: "box", layout: "baseline", spacing: "sm", contents: [{ type: "text", text: "เวลา", color: "#aaaaaa", size: "sm", flex: 2 }, { type: "text", text: `${match.time} - ${match.endTime} น.`, wrap: true, color: "#666666", size: "sm", flex: 5 }] },
-                                { type: "box", layout: "baseline", spacing: "sm", contents: [{ type: "text", text: "ผู้สร้าง", color: "#aaaaaa", size: "sm", flex: 2 }, { type: "text", text: match.creatorName, wrap: true, color: "#1DB954", size: "sm", flex: 5 }] }
-                            ]
+    const matchData = req.body.data;
+    if (!matchData || !matchData.id) {
+        return res.status(400).send("ไม่พบข้อมูลแชร์แมตช์");
+    }
+
+    const thaiDate = new Date(matchData.date).toLocaleDateString('th-TH', { day: 'numeric', month: 'long' });
+
+    const flexMessage = {
+        type: "flex",
+        altText: "🏸 มีตี้แบดมินตันเปิดใหม่จ้าาา! 🐾",
+        contents: {
+            type: "bubble",
+            hero: {
+                type: "image",
+                url: "https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?q=80&w=1000",
+                size: "full",
+                aspectRatio: "20:13",
+                aspectMode: "cover"
+            },
+            body: {
+                type: "box",
+                layout: "vertical",
+                contents: [
+                    { type: "text", text: "🏸 เปิดตี้แบดมินตันใหม่! 🐾", weight: "bold", size: "xl", color: "#1db446" },
+                    {
+                        type: "box",
+                        layout: "vertical",
+                        margin: "md",
+                        spacing: "sm",
+                        contents: [
+                            { type: "text", text: `📍 สนาม: ${matchData.location}`, size: "sm", color: "#555555", wrap: true },
+                            { type: "text", text: `📅 วันที่: ${thaiDate}`, size: "sm", color: "#555555" },
+                            { type: "text", text: `⏰ เวลา: ${matchData.time} - ${matchData.endTime} น.`, size: "sm", color: "#555555" },
+                            { type: "text", text: `👑 หัวหน้าตี้: ${matchData.creatorName}`, size: "sm", color: "#e67e22", weight: "bold" },
+                            { type: "text", text: `👥 รับตัวจริงสูงสุด: ${matchData.maxPlayers} คน`, size: "sm", color: "#27ae60", weight: "bold" }
+                        ]
+                    }
+                ]
+            },
+            footer: {
+                type: "box",
+                layout: "vertical",
+                spacing: "sm",
+                contents: [
+                    {
+                        type: "button",
+                        style: "link",
+                        height: "sm",
+                        action: {
+                            type: "uri",
+                            label: "🙋‍♂️ กดส่องและลงชื่อเข้าตี้",
+                            uri: `https://liff.line.me/2010400559-X4eBS5zg?matchId=${matchData.id}`
                         }
-                    ]
-                },
-                footer: {
-                    type: "box", layout: "vertical", spacing: "sm", contents: [
-                        { type: "button", style: "link", height: "sm", action: { type: "uri", label: "🙋‍♂️ คลิกจองต่อคิวเข้าตี้", uri: `https://liff.line.me/2010400559-X4eBS5zg?matchId=${match.id}` } }
-                    ]
-                }
+                    }
+                ]
             }
-        };
-
-        await axios.post("https://api.line.me/v2/bot/message/push", { to: LINE_GROUP_ID, messages: [flexMessage] }, { headers: { "Authorization": `Bearer ${LINE_ACCESS_TOKEN}` } });
-        res.status(200).send({ result: "ส่งใบการ์ดชวนตี้แบดเข้าไลน์กลุ่มเรียบร้อยแล้ว!" });
-    } catch (err) {
-        console.error(err);
-        res.status(500).send({ error: err.message });
-    }
-});
-// 🚀 1.1 API แจ้งเตือนเมื่อมีการยกเลิก/ลบตี้
-exports.apiNotifyMatchDeleted = functions.https.onRequest(async (req, res) => {
-    res.set('Access-Control-Allow-Origin', '*');
-    res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.set('Access-Control-Allow-Headers', 'Content-Type');
-
-    if (req.method === 'OPTIONS') {
-        res.sendStatus(204);
-        return;
-    }
+        }
+    };
 
     try {
-        const match = req.body && req.body.data;
-        if (!match) {
-            res.status(400).send({ error: "missing match data" });
-            return;
-        }
-
-        const thaiDate = new Date(match.date).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
-        const messageText = `🚨 แจ้งยกเลิกตี้แบดมินตัน\nสนาม: ${match.location || '-'}\nวันที่: ${thaiDate}\nเวลา: ${match.time || '-'} - ${match.endTime || '-'} น.\nผู้สร้าง: ${match.creatorName || '-'}\n\nขออภัยสมาชิกทุกท่าน ตี้นี้ถูกยกเลิกแล้วครับ 🐾`;
-
         await axios.post("https://api.line.me/v2/bot/message/push", {
             to: LINE_GROUP_ID,
-            messages: [{ type: "text", text: messageText }]
-        }, {
-            headers: { "Authorization": `Bearer ${LINE_ACCESS_TOKEN}` }
-        });
-
-        res.status(200).send({ result: "ส่งแจ้งเตือนยกเลิกตี้เข้ากลุ่มเรียบร้อยแล้ว!" });
-    } catch (err) {
-        console.error(err);
-        res.status(500).send({ error: err.message });
+            messages: [flexMessage]
+        }, { headers: { "Content-Type": "application/json", "Authorization": `Bearer ${LINE_ACCESS_TOKEN}` } });
+        return res.status(200).send({ data: { success: true, message: "ส่งข่าวเปิดตี้สำเร็จ" } });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).send({ data: { error: error.message } });
     }
 });
 
-// 🚀 2. API แจ้งสรุปเรียกเก็บเงิน (Billing) พร้อมเลขบัญชี
-exports.apiNotifyBilling = functions.https.onRequest(async (req, res) => {
+// 🗑️ 2. API แจ้งเตือนเมื่อหัวตี้กดลบ/ยกเลิกตี้
+exports.apiNotifyMatchDeleted = functions.https.onRequest(async (req, res) => {
     res.set('Access-Control-Allow-Origin', '*');
-    res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.set('Access-Control-Allow-Headers', 'Content-Type');
 
     if (req.method === 'OPTIONS') {
-        res.sendStatus(204);
-        return;
+        return res.status(204).send('');
     }
 
+    const matchData = req.body.data;
+    if (!matchData) {
+        return res.status(400).send("ไม่มีข้อมูล");
+    }
+
+    const thaiDate = new Date(matchData.date).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
+    const textMsg = `🗑️ [ประกาศยกเลิกตี้แบดมินตัน]\n📌 สนาม: ${matchData.location}\n📅 วันที่: ${thaiDate}\n⏰ เวลา: ${matchData.time} - ${matchData.endTime} น.\n\nตี้ดังกล่าวได้ถูกยุบหรือยกเลิกเรียบร้อยแล้วโดยหัวหน้าตี้ครับ 🙏`;
+
     try {
-        const data = req.body && req.body.data;
-        if (!data) {
-            res.status(400).send({ error: "missing billing data" });
-            return;
-        }
-
-        const { matchId, summaryText, bankInfo } = data;
-        const billingMessage = {
-            type: "flex",
-            altText: "💰 บิลเรียกเก็บค่าแชร์ตี้แบดออกแล้วจ้า!",
-            contents: {
-                type: "bubble",
-                body: {
-                    type: "box", layout: "vertical", contents: [
-                        { type: "text", text: "💰 สรุปบิลค่าใช้จ่ายก๊วนแบด 🐾", weight: "bold", color: "#E63946", size: "sm" },
-                        { type: "text", text: summaryText, wrap: true, size: "sm", margin: "md", fontStyle: "normal", weight: "medium", leading: "md" },
-                        { type: "separator", margin: "md" },
-                        { type: "text", text: `🏦 ช่องทางโอนเงินคืนหัวตี้:\n${bankInfo}`, wrap: true, color: "#1D3557", size: "sm", weight: "bold", margin: "md" }
-                    ]
-                },
-                footer: {
-                    type: "box", layout: "vertical", spacing: "sm", contents: [
-                        { type: "button", style: "primary", color: "#E63946", height: "sm", action: { type: "uri", label: "📤 แนบหลักฐานสลิปโอนเงิน", uri: `https://liff.line.me/2010400559-X4eBS5zg?matchId=${matchId}` } }
-                    ]
-                }
-            }
-        };
-
-        await axios.post("https://api.line.me/v2/bot/message/push", { to: LINE_GROUP_ID, messages: [billingMessage] }, { headers: { "Authorization": `Bearer ${LINE_ACCESS_TOKEN}` } });
-        res.status(200).send({ result: "ส่งบิลแชร์เรียกเก็บเงินสำเร็จ!" });
-    } catch (err) {
-        console.error(err);
-        res.status(500).send({ error: err.message });
+        await axios.post("https://api.line.me/v2/bot/message/push", {
+            to: LINE_GROUP_ID,
+            messages: [{ type: "text", text: textMsg }]
+        }, { headers: { "Content-Type": "application/json", "Authorization": `Bearer ${LINE_ACCESS_TOKEN}` } });
+        return res.status(200).send({ data: { success: true, message: "แจ้งยกเลิกตี้สำเร็จ" } });
+    } catch (error) { 
+        console.error(error);
+        return res.status(500).send({ data: { error: error.message } });
     }
 });
 
-// 🚀 3. Scheduler ทำงานทุกๆ 15 นาที เพื่อตรวจเช็กตี้แบดอีก 2 ชั่วโมงจะเริ่ม (เวอร์ชันแก้บั๊กเวลาไทย + จัดการ Memory)
-exports.checkTwoHourReminder = onSchedule({
-    schedule: "every 15 minutes",
-    timeZone: "Asia/Bangkok", // 🌟 บังคับเซิร์ฟเวอร์ยึดตามเขตเวลาประเทศไทย
-    memory: "256MiB"
-}, async (event) => {
-    // คำนวณเวลาปัจจุบันให้เป็นเวลาไทย
-    const nowThailand = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Bangkok" }));
-    
+// 💰 3. API แจ้งเตือนเรียกเก็บเงินแชร์ค่าคอร์ด
+exports.apiNotifyBilling = functions.https.onRequest(async (req, res) => {
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.set('Access-Control-Allow-Headers', 'Content-Type');
+
+    if (req.method === 'OPTIONS') {
+        return res.status(204).send('');
+    }
+
+    const dataObj = req.body.data;
+    if (!dataObj) {
+        return res.status(400).send("ไม่มีข้อมูลเรียกเก็บเงิน");
+    }
+
+    const { matchId, summaryText, bankInfo } = dataObj;
+    const textMsg = `💰 [เรียกเก็บค่าตีแบดมินตันมาแล้วจ้า!]\n\n${summaryText}\n\n🏦 ช่องทางชำระเงินของหัวตี้:\n${bankInfo}\n\n👉 คลิกเพื่อเข้าไปแนบหลักฐานสลิปเงินคืนหัวตี้ได้ที่นี่เลย:\nhttps://liff.line.me/2010400559-X4eBS5zg?matchId=${matchId}`;
+
     try {
-        const snapshot = await db.ref("matches").once("value");
-        const matches = snapshot.val() || {};
+        await axios.post("https://api.line.me/v2/bot/message/push", {
+            to: LINE_GROUP_ID,
+            messages: [{ type: "text", text: textMsg }]
+        }, { headers: { "Content-Type": "application/json", "Authorization": `Bearer ${LINE_ACCESS_TOKEN}` } });
+        return res.status(200).send({ data: { success: true, message: "ส่งบิลเข้ากลุ่มสำเร็จ" } });
+    } catch (error) { 
+        console.error(error);
+        return res.status(500).send({ data: { error: error.message } });
+    }
+});
 
-        for (const matchId in matches) {
-            const match = matches[matchId];
-            
-            // ข้ามตี้ที่แจ้งเตือนไปแล้ว หรือไม่ได้อยู่ในสถานะ active
-            if (match.notified2Hr || match.status !== "active") continue;
+// ⏰ 4. ระบบเช็กยอดแจ้งเตือนอัตโนมัติล่วงหน้า 2 ชั่วโมง (v2 Cloud Scheduler)
+exports.check2HourReminder = onSchedule("every 15 minutes", async (event) => {
+    const snapshot = await db.ref("matches").get();
+    const matches = snapshot.val() || {};
+    const now = new Date();
 
-            // แปลงเวลาของตี้แบดมินตัน
-            const matchDateTime = new Date(`${match.date}T${match.time}:00`);
-            const timeDiffMs = matchDateTime - nowThailand;
-            const twoHoursInMs = 2 * 60 * 60 * 1000;
+    for (let key in matches) {
+        const match = matches[key];
+        if (match.status !== 'active' || match.notified2Hr) continue;
 
-            // 🎯 เงื่อนไข: ถ้าตี้กำลังจะเริ่มในอีกไม่เกิน 2 ชั่วโมงล่วงหน้า
-            if (timeDiffMs > 0 && timeDiffMs <= twoHoursInMs) {
-                const regData = match.registrations || {};
-                const players = Object.keys(regData).map(k => regData[k]).sort((a,b) => a.timestamp - b.timestamp);
-                const realPlayers = players.slice(0, parseInt(match.maxPlayers));
+        const matchDateTime = new Date(`${match.date}T${match.time}:00`);
+        const timeDiffMs = matchDateTime - now;
+        const twoHoursInMs = 2 * 60 * 60 * 1000;
 
-                let playerNamesText = "";
-                realPlayers.forEach((p, idx) => {
-                    playerNamesText += `${idx + 1}. ${p.name}\n`;
-                });
-                if (realPlayers.length === 0) playerNamesText = "ยังไม่มีสมาชิกลงชื่อตัวจริง";
+        if (timeDiffMs > 0 && timeDiffMs <= twoHoursInMs) {
+            const regData = match.registrations || {};
+            const players = Object.keys(regData).map(k => regData[k]).sort((a,b) => a.timestamp - b.timestamp);
+            const realPlayers = players.slice(0, parseInt(match.maxPlayers));
 
-                const reminderText = `📢 [ประกาศแจ้งเตือนตี้แบดอีก 2 ชั่วโมง!]\nสนาม: ${match.location}\nเวลา: ${match.time} - ${match.endTime} น.\n\n🔥 สรุปรายชื่อตัวจริงยืนยันสิทธิ์:\n${playerNamesText}\n⚠️ สมาชิกท่านใดติดธุระ รบกวนกด 'ยกเลิกคิว' ออกจากตี้ผ่านแอปด้วยครับ! 🐾`;
+            let playerNamesText = "";
+            realPlayers.forEach((p, idx) => { playerNamesText += `${idx + 1}. ${p.name}\n`; });
+            if (realPlayers.length === 0) playerNamesText = "ยังไม่มีสมาชิกลงชื่อตัวจริง";
 
-                // ส่งการ์ดเตือนเข้ากลุ่ม LINE
+            const reminderText = `📢 [ประกาศแจ้งเตือนตี้แบดอีก 2 ชั่วโมง!]\nสนาม: ${match.location}\nเวลา: ${match.time} - ${match.endTime} น.\n\n🔥 สรุปรายชื่อตัวจริงยื่นยันสิทธิ์:\n${playerNamesText}\n⚠️ สมาชิกท่านใดติดธุระ รบกวนกด 'ยกเลิกคิว' ออกจากตี้ผ่านแอปด้วยครับ! 🐾`;
+
+            try {
                 await axios.post("https://api.line.me/v2/bot/message/push", {
                     to: LINE_GROUP_ID,
                     messages: [{ type: "text", text: reminderText }]
-                }, {
-                    headers: { "Authorization": `Bearer ${LINE_ACCESS_TOKEN}` }
-                });
+                }, { headers: { "Content-Type": "application/json", "Authorization": `Bearer ${LINE_ACCESS_TOKEN}` } });
 
-                // อัปเดตสถานะลงฐานข้อมูลเพื่อไม่ให้ส่งซ้ำๆ อีก
-                await db.ref(`matches/${matchId}/notified2Hr`).set(true);
+                await db.ref(`matches/${key}/notified2Hr`).set(true);
+            } catch (error) { 
+                console.error("ระบบแจ้งเตือนผิดพลาดที่ ID แมตช์:", key, error); 
             }
         }
-    } catch (error) {
-        console.error("เกิดข้อผิดพลาดในระบบตั้งเวลาเตือน 2 ชม.:", error);
     }
 });
