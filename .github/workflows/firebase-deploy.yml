@@ -22,7 +22,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18  # ตัวระบบ Firebase Functions ยังคงต้องการ Node.js 18 ในการรันหลังบ้าน
+          node-version: 22
           cache: 'npm'
           cache-dependency-path: functions/package.json
 
