@@ -29,11 +29,6 @@ async function isGroupMember(userId) {
     }
 }
 
-// Webhook เปล่าคงไว้ตามโครงสร้างเดิม
-exports.webhook = functions.https.onRequest((req, res) => {
-    res.sendStatus(200);
-});
-
 // ============================
 // 🔐 API ตรวจสอบสมาชิกกลุ่ม (เรียกจาก LIFF)
 // ============================
