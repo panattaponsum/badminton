@@ -176,9 +176,8 @@ exports.apiNotifyBilling = functions.https.onRequest(async (req, res) => {
     if (!dataObj) return res.status(400).send("ไม่มีข้อมูล");
 
     const { matchId, summaryText, bankInfo, paymentDate } = dataObj;
-    const paymentDateText = paymentDate ? `\n📅 วันที่รับโอนที่ระบบใช้ตรวจ: ${paymentDate}` : '';
-    const textMsg = `💰 [เรียกเก็บค่าตีแบดมินตันมาแล้วจ้า!]\n\n${summaryText}${paymentDateText}\n\n🏦 ช่องทางชำระเงิน:\n${bankInfo}\n\n🤖 แนบสลิปแล้วระบบตรวจยอด/วันที่ให้อัตโนมัติ\n👉 กดแนบสลิปได้ที่นี่:\nhttps://liff.line.me/2010400559-X4eBS5zg?matchId=${matchId}`;
-
+    const paymentDateText = paymentDate ? `\n📅 ระบบรับโอนตั้งแต่หลังส่งบิล: ${paymentDate}` : '';
+    const textMsg = `💰 [เรียกเก็บค่าตีแบดมินตันมาแล้วจ้า!]\n\n${summaryText}${paymentDateText}\n\n🏦 ช่องทางชำระเงิน:\n${bankInfo}\n\n🤖 แนบสลิปแล้วระบบตรวจยอด และเวลาโอนต้องอยู่หลังส่งบิลเข้ากลุ่ม LINE\n👉 กดแนบสลิปได้ที่นี่:\nhttps://liff.line.me/2010400559-X4eBS5zg?matchId=${matchId}`;
     try {
         await axios.post("https://api.line.me/v2/bot/message/push", {
             to: LINE_GROUP_ID,
@@ -209,14 +208,19 @@ exports.check2HourReminder = onSchedule("every 15 minutes", async (event) => {
         if (timeDiffMs > 0 && timeDiffMs <= twoHoursMs) {
             const regData = match.registrations || {};
             const players = Object.keys(regData).map(k => regData[k]).sort((a, b) => a.timestamp - b.timestamp);
-            const realPlayers = players.slice(0, parseInt(match.maxPlayers));
+             const maxPlayers = parseInt(match.maxPlayers);
+            const realPlayers = players.slice(0, maxPlayers);
+            const waitingPlayers = players.slice(maxPlayers);
 
             let playerNamesText = realPlayers.length > 0
                 ? realPlayers.map((p, i) => `${i + 1}. ${p.name}`).join("\n")
                 : "ยังไม่มีสมาชิกลงชื่อตัวจริง";
 
-            const reminderText = `📢 [แจ้งเตือน! เหลืออีก 2 ชั่วโมงก็จะถึงเวลาตี้แบดแล้ว!]\n\n📍 สนาม: ${match.location}\n⏰ เวลา: ${match.time} - ${match.endTime} น.\n\n🔥 รายชื่อตัวจริง (${realPlayers.length} คน):\n${playerNamesText}\n\n⚠️ หลังจากนี้อีก 1 ชั่วโมง ระบบจะล็อครายชื่อ ไม่สามารถยกเลิกได้แล้ว!\n(ถ้าจะถอนตัวรีบทำตอนนี้เลยนะครับ) 🐾`;
+           let waitingText = waitingPlayers.length > 0
+                ? `\n\n⏳ คิวสำรอง (${waitingPlayers.length} คน):\n${waitingPlayers.map((p, i) => `${i + 1}. ${p.name}`).join("\n")}`
+                : "\n\n⏳ คิวสำรอง: ยังไม่มีคิวสำรอง";
 
+            const reminderText = `📢 [แจ้งเตือน! เหลืออีก 2 ชั่วโมงก็จะถึงเวลาตี้แบดแล้ว!]\n\n📍 สนาม: ${match.location}\n⏰ เวลา: ${match.time} - ${match.endTime} น.\n\n🔥 รายชื่อตัวจริง (${realPlayers.length} คน):\n${playerNamesText}${waitingText}\n\n⚠️ หลังจากนี้อีก 1 ชั่วโมง ระบบจะล็อครายชื่อ ไม่สามารถยกเลิกได้แล้ว!\n(ถ้าจะถอนตัวรีบทำตอนนี้เลยนะครับ) 🐾`;
             try {
                 await axios.post("https://api.line.me/v2/bot/message/push", {
                     to: LINE_GROUP_ID,
@@ -260,11 +264,8 @@ exports.check1HourReminder = onSchedule("every 15 minutes", async (event) => {
                 ? realPlayers.map((p, i) => `${i + 1}. ${p.name}`).join("\n")
                 : "ยังไม่มีสมาชิก";
 
-            let waitingText = waitingPlayers.length > 0
-                ? `\n\n⏳ คิวสำรอง:\n${waitingPlayers.map((p, i) => `${i + 1}. ${p.name}`).join("\n")}`
-                : "";
 
-            const reminderText = `🔔 [สรุปรายชื่อ! เหลืออีก 1 ชั่วโมงก็จะถึงเวลาตี้แล้ว!]\n\n📍 สนาม: ${match.location}\n⏰ เวลา: ${match.time} - ${match.endTime} น.\n\n✅ รายชื่อตัวจริง (ล็อคแล้ว ${realPlayers.length} คน):\n${realText}${waitingText}\n\n🔒 ระบบล็อครายชื่อแล้ว ไม่สามารถยกเลิก/ถอนตัวได้อีกแล้วนะครับ!\nพบกันที่สนามครับ 🏸🐾`;
+            const reminderText = `🔔 [สรุปรายชื่อ! เหลืออีก 1 ชั่วโมงก็จะถึงเวลาตี้แล้ว!]\n\n📍 สนาม: ${match.location}\n⏰ เวลา: ${match.time} - ${match.endTime} น.\n\n✅ รายชื่อตัวจริง (ล็อคแล้ว ${realPlayers.length} คน):\n${realText}\n\n🔒 ระบบล็อครายชื่อแล้ว ไม่สามารถยกเลิก/ถอนตัวได้อีกแล้วนะครับ!\nพบกันที่สนามครับ 🏸🐾`;
 
             try {
                 await axios.post("https://api.line.me/v2/bot/message/push", {
