@@ -1,16 +1,7 @@
 {
-  "functions": [
-    {
-      "source": "functions",
-      "codebase": "default",
-      "ignore": [
-        "node_modules",
-        ".runtimeconfig.json",
-        "firebase-debug.log",
-        "firestore-debug.log"
-      ]
-    }
-  ],
+  "database": {
+    "rules": "database.rules.json"
+  },
   "hosting": {
     "public": "public",
     "ignore": [
@@ -18,16 +9,22 @@
       "**/.*",
       "**/node_modules/**"
     ],
-    "headers": [
+    "rewrites": [
       {
         "source": "**",
-        "headers": [
-          {
-            "key": "Content-Security-Policy",
-            "value": "default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://static.line-scdn.net https://www.gstatic.com https://us-central1-bokbak-badminton.cloudfunctions.net; script-src-elem 'self' 'unsafe-inline' https://static.line-scdn.net https://www.gstatic.com; connect-src 'self' https://*.firebaseio.com wss://*.firebaseio.com https://us-central1-bokbak-badminton.cloudfunctions.net https://liffsdk.line-scdn.net https://www.gstatic.com https://bokbak-badminton-default-rtdb.firebaseio.com wss://bokbak-badminton-default-rtdb.firebaseio.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*.line-apps.com https://profile.line-scdn.net;"
-          }
-        ]
+        "destination": "/index.html"
       }
+    ]
+  },
+  "functions": {
+    "source": "functions",
+    "codebase": "default",
+    "ignore": [
+      "node_modules",
+      ".git",
+      "firebase-debug.log",
+      "firestore-debug.log",
+      "pubsub-debug.log"
     ]
   }
 }
