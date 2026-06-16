@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ก๊วนบ๊อกแบ๊ก 🏸</title>
+    <title>ก๊วนบ๊อกแบ๊ก แบดมินตัน 🏸</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -86,7 +86,7 @@
         /* === BUTTONS === */
         .btn-primary {
             background: linear-gradient(135deg, #fb9fce, #86efac);
-            color: white;
+            color: #0f172a;
             border: none;
             border-radius: 14px;
             padding: 13px 20px;
@@ -96,6 +96,7 @@
             cursor: pointer;
             transition: all 0.2s;
             box-shadow: 0 3px 10px rgba(22,163,74,0.3);
+            text-shadow: 0 1px 0 rgba(255,255,255,0.35);
         }
         .btn-primary:active { transform: scale(0.97); }
         .btn-danger {
@@ -124,7 +125,7 @@
         }
         .btn-join {
             background: linear-gradient(135deg, #86efac, #67e8f9);
-            color: white;
+            color: #064e3b;
             border: none;
             border-radius: 14px;
             padding: 13px 20px;
@@ -134,6 +135,7 @@
             cursor: pointer;
             transition: all 0.2s;
             box-shadow: 0 3px 10px rgba(22,163,74,0.3);
+            text-shadow: 0 1px 0 rgba(255,255,255,0.35);
         }
         .btn-join:disabled, .btn-leave:disabled {
             opacity: 0.45;
@@ -361,8 +363,8 @@
     <!-- HEADER -->
     <div class="hero-header">
         <div style="max-width:440px; margin:0 auto; position:relative; z-index:1;">
-            <p style="font-size:11px; color:#bbf7d0; font-weight:600; letter-spacing:1px; margin-bottom:4px;">ก๊วนบ๊อกแบ๊ก 🐾</p>
-            <h1 style="font-size:24px; font-weight:800; color:white; line-height:1.2; margin-bottom:4px;">ระบบลงชื่อตี้แบด<br>& แชร์ค่าคอร์ด</h1>
+            <h1 style="font-size:34px; font-weight:800; color:#0f172a; line-height:1.05; margin-bottom:6px; text-shadow:0 2px 0 rgba(255,255,255,0.45);">ก๊วนบ๊อกแบ๊ก แบดมินตัน</h1>
+            <p style="font-size:15px; font-weight:700; color:#334155; line-height:1.4; margin-bottom:4px; text-shadow:0 1px 0 rgba(255,255,255,0.45);">ระบบลงชื่อตีแบด</p>
             <!-- User Profile mini -->
             <div id="user-profile" class="hidden" style="margin-top:14px; background:rgba(255,255,255,0.15); border-radius:14px; padding:8px 12px; display:flex; align-items:center; gap:10px; backdrop-filter:blur(4px);">
                 <img id="user-avatar" class="w-10 h-10 rounded-full border-2 border-white/50" src="" alt="">
@@ -428,7 +430,7 @@
         <!-- JOIN/LEAVE BUTTONS -->
         <div id="user-actions" class="hidden fade-up" style="margin-top:12px; display:flex; gap:10px;">
             <button id="btn-join" class="btn-join" onclick="joinMatch()">🙋‍♂️ ลงชื่อเข้าตี้</button>
-            <button id="btn-leave" class="btn-leave" onclick="leaveMatch()">❌ ถอนตัว</button>
+            <button id="btn-leave" class="btn-leave" onclick="leaveMatch()">❌ เทจ้าาา</button>
         </div>
 
         <!-- PLAYER LISTS CONTAINER -->
@@ -482,9 +484,9 @@
                             onchange="previewSlip(this)">
                         <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;">
                             <input type="number" id="input-slip-amount" class="input-field" placeholder="ยอดที่โอน (บาท)">
-                            <input type="date" id="input-slip-date" class="input-field" title="วันที่โอนเงิน">
+                           <input type="datetime-local" id="input-slip-date" class="input-field" title="วันที่และเวลาโอนเงิน">
                         </div>
-                        <p style="font-size:11px; color:#64748b; margin:0 0 8px 0; line-height:1.5;">🤖 ระบบจะตรวจยอดและวันที่ให้อัตโนมัติ ถ้าตรงจะขึ้นว่าจ่ายแล้วทันที</p>
+                        <p style="font-size:11px; color:#64748b; margin:0 0 8px 0; line-height:1.5;">🤖 ระบบจะตรวจยอด และเวลาโอนต้องอยู่หลังจากส่งบิลเข้ากลุ่ม LINE</p>
                         <img id="slip-preview" style="display:none; width:100%; border-radius:10px; margin-bottom:8px; max-height:180px; object-fit:cover;">
                         <button onclick="uploadPaymentSlip()"
                             style="width:100%; background:linear-gradient(135deg,#f59e0b,#d97706); color:white; border:none; border-radius:10px; padding:10px; font-size:13px; font-weight:700; cursor:pointer; font-family:'Sarabun',sans-serif;">
@@ -591,8 +593,8 @@
                         <input type="text" id="bill-bank" placeholder="ธ.กสิกร 012-3-45678-9 นายบ๊อกแบ๊ก" class="input-dark">
                     </div>
                     <div style="margin-top:10px;">
-                        <label style="font-size:11px; color:#94a3b8; display:block; margin-bottom:3px;">📅 วันที่รับโอนที่ถูกต้อง</label>
-                        <input type="date" id="bill-payment-date" class="input-dark">
+                       <label style="font-size:11px; color:#94a3b8; display:block; margin-bottom:3px;">📅 เริ่มนับวันที่/เวลารับโอน</label>
+                        <input type="text" id="bill-payment-date" class="input-dark" value="หลังจากส่งบิลเข้ากลุ่ม LINE" disabled>
                     </div>
                     <button onclick="triggerBillingSubmit()"
                         style="width:100%; margin-top:10px; background:linear-gradient(135deg,#059669,#047857); color:white; border:none; border-radius:12px; padding:11px; font-size:13px; font-weight:700; cursor:pointer; font-family:'Sarabun',sans-serif;">
@@ -1087,11 +1089,16 @@
         return Number(currentMatch?.paymentPerHead || 0) || Number(((currentMatch?.billingTotal || 0) / realCount).toFixed(2));
     }
 
-    function validateSlipMeta(amount, transferDate) {
+     function validateSlipMeta(amount, transferDateTime) {
         const expectedAmount = getExpectedPayment();
-        const expectedDate = currentMatch?.paymentDate || currentMatch?.date;
+        const billingSentAt = Number(currentMatch?.billingSentAt || 0);
+        const transferAt = transferDateTime ? new Date(transferDateTime).getTime() : 0;
         const amountOk = Math.abs(Number(amount) - expectedAmount) < 0.01;
-        const dateOk = transferDate === expectedDate;
+        const fallbackDate = currentMatch?.paymentDate || currentMatch?.date;
+        const dateOk = billingSentAt ? transferAt >= billingSentAt : transferDateTime.slice(0, 10) === fallbackDate;
+        const expectedDate = billingSentAt
+            ? new Date(billingSentAt).toLocaleString('th-TH', { timeZone: 'Asia/Bangkok', dateStyle: 'short', timeStyle: 'short' })
+            : (currentMatch?.paymentDate || currentMatch?.date);
         return { amountOk, dateOk, expectedAmount, expectedDate, isValid: amountOk && dateOk };
     }
 
@@ -1104,7 +1111,7 @@
             return;
         }
         if (!amount || !transferDate) {
-            alert('กรุณากรอกยอดโอนและวันที่โอน เพื่อให้ระบบตรวจอัตโนมัติครับ');
+            alert('กรุณากรอกยอดโอนและวันที่/เวลาโอน เพื่อให้ระบบตรวจอัตโนมัติครับ');
             return;
         }
         const check = validateSlipMeta(amount, transferDate);
@@ -1116,7 +1123,7 @@
                 paymentDate: transferDate,
                 paymentCheckedAt: Date.now(),
                 paymentStatus: check.isValid ? 'paid' : 'rejected',
-                paymentRemark: check.isValid ? 'auto-approved' : `ยอด/วันที่ไม่ตรง (ควรเป็น ${check.expectedAmount} บาท / ${check.expectedDate})`,
+               paymentRemark: check.isValid ? 'auto-approved' : `ยอดไม่ตรงหรือเวลาโอนอยู่ก่อนส่งบิล (ควรเป็น ${check.expectedAmount} บาท / หลัง ${check.expectedDate})`,
                 isPaid: check.isValid
             };
             await db.ref(`matches/${selectedMatchId}/registrations/${userId}`).update(updates);
@@ -1125,7 +1132,7 @@
                 alert('✅ ระบบตรวจสอบแล้วถูกต้อง ชำระเงินเรียบร้อยครับ!');
             } else {
                 await notifySlipChecked(userId, displayName, 'rejected', updates.paymentRemark);
-                alert(`⚠️ ยอดหรือวันที่ไม่ตรง\nควรเป็น ${check.expectedAmount} บาท / วันที่ ${check.expectedDate}\nระบบแจ้งหัวตี้ให้ตรวจสอบอีกทีแล้วครับ`);
+               alert(`⚠️ ยอดไม่ตรงหรือเวลาโอนอยู่ก่อนส่งบิล\nควรเป็น ${check.expectedAmount} บาท / หลัง ${check.expectedDate}\nระบบแจ้งหัวตี้ให้ตรวจสอบอีกทีแล้วครับ`);
             }
         };
         reader.readAsDataURL(fileInput.files[0]);
@@ -1152,7 +1159,9 @@
         const courts = parseFloat(document.getElementById('bill-court-count').value) || 0;
         const balls = parseFloat(document.getElementById('bill-shuttlecock').value) || 0;
         const bank = document.getElementById('bill-bank').value.trim();
-        const paymentDate = document.getElementById('bill-payment-date').value || currentMatch.date;
+        const billingSentAt = Date.now();
+        const paymentDate = new Date(billingSentAt).toLocaleString('th-TH', { timeZone: 'Asia/Bangkok', dateStyle: 'short', timeStyle: 'short' });
+
 
         if (!bank) {
             alert('⚠️ กรุณากรอกเลขบัญชีรับเงินด้วยครับ');
@@ -1172,7 +1181,7 @@
         await db.ref(`matches/${selectedMatchId}/billingTotal`).set(finalTotal);
         await db.ref(`matches/${selectedMatchId}/paymentPerHead`).set(Number(perHead));
         await db.ref(`matches/${selectedMatchId}/paymentDate`).set(paymentDate);
-
+        await db.ref(`matches/${selectedMatchId}/billingSentAt`).set(billingSentAt);
         try {
             await fetch(`${CLOUD_BASE}/apiNotifyBilling`, {
                 method: 'POST',
