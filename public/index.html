@@ -3,549 +3,1135 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ก๊วนบ๊อกแบ๊ก แบดมินตัน 🏸</title>
+    <title>ก๊วนบ๊อกแบ๊ก 🏸</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --green: #16a34a;
+            --green-light: #dcfce7;
+            --green-mid: #22c55e;
+            --amber: #d97706;
+            --amber-light: #fef3c7;
+            --rose: #e11d48;
+            --rose-light: #ffe4e6;
+            --slate: #1e293b;
+            --muted: #64748b;
+            --bg: #f0fdf4;
+            --card: #ffffff;
+            --border: #e2e8f0;
+        }
+        * { font-family: 'Sarabun', sans-serif; }
+        body { background: var(--bg); }
+
+        /* === HEADER === */
+        .hero-header {
+            background: linear-gradient(135deg, #15803d 0%, #16a34a 50%, #059669 100%);
+            padding: 20px 16px 32px;
+            position: relative;
+            overflow: hidden;
+        }
+        .hero-header::before {
+            content: '🏸';
+            position: absolute;
+            right: -10px;
+            top: -10px;
+            font-size: 100px;
+            opacity: 0.08;
+            transform: rotate(-20deg);
+        }
+        .hero-header::after {
+            content: '🐾';
+            position: absolute;
+            left: 10px;
+            bottom: -5px;
+            font-size: 60px;
+            opacity: 0.07;
+            transform: rotate(10deg);
+        }
+
+        /* === CARDS === */
+        .card {
+            background: var(--card);
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            padding: 18px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+        }
+        .card-dark {
+            background: linear-gradient(145deg, #1e293b, #0f172a);
+            border-radius: 20px;
+            border: 1px solid #334155;
+            padding: 18px;
+        }
+
+        /* === STATUS BADGE === */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 10px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .badge-open { background: var(--green-light); color: var(--green); }
+        .badge-locked { background: #fef3c7; color: #b45309; }
+        .badge-billing { background: #fff7ed; color: #c2410c; }
+
+        /* === BUTTONS === */
+        .btn-primary {
+            background: linear-gradient(135deg, #16a34a, #059669);
+            color: white;
+            border: none;
+            border-radius: 14px;
+            padding: 13px 20px;
+            font-size: 15px;
+            font-weight: 700;
+            width: 100%;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 3px 10px rgba(22,163,74,0.3);
+        }
+        .btn-primary:active { transform: scale(0.97); }
+        .btn-danger {
+            background: linear-gradient(135deg, #e11d48, #be123c);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 10px 16px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-leave {
+            background: linear-gradient(135deg, #f43f5e, #e11d48);
+            color: white;
+            border: none;
+            border-radius: 14px;
+            padding: 13px 20px;
+            font-size: 15px;
+            font-weight: 700;
+            flex: 1;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 3px 10px rgba(225,29,72,0.3);
+        }
+        .btn-join {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            color: white;
+            border: none;
+            border-radius: 14px;
+            padding: 13px 20px;
+            font-size: 15px;
+            font-weight: 700;
+            flex: 1;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 3px 10px rgba(22,163,74,0.3);
+        }
+        .btn-join:disabled, .btn-leave:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        /* === PLAYER ROW === */
+        .player-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .player-row:last-child { border-bottom: none; }
+        .player-avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 800;
+            color: #15803d;
+            flex-shrink: 0;
+        }
+
+        /* === DEBT TRACKER (Khun Thong style) === */
+        .debt-card {
+            border-radius: 16px;
+            padding: 14px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border: 1.5px solid transparent;
+            transition: all 0.2s;
+        }
+        .debt-card.unpaid {
+            background: #fff5f5;
+            border-color: #fecdd3;
+        }
+        .debt-card.pending {
+            background: #fffbeb;
+            border-color: #fde68a;
+        }
+        .debt-card.paid {
+            background: #f0fdf4;
+            border-color: #bbf7d0;
+        }
+        .debt-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+        .debt-icon.unpaid { background: #ffe4e6; }
+        .debt-icon.pending { background: #fef3c7; }
+        .debt-icon.paid { background: #dcfce7; }
+
+        /* === SUMMARY BAR === */
+        .summary-bar {
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            border-radius: 16px;
+            padding: 14px 18px;
+            display: flex;
+            justify-content: space-around;
+            gap: 8px;
+        }
+        .summary-stat { text-align: center; }
+        .summary-stat .num { font-size: 22px; font-weight: 800; color: white; }
+        .summary-stat .lbl { font-size: 10px; color: #94a3b8; margin-top: 2px; }
+
+        /* === INPUT === */
+        .input-field {
+            width: 100%;
+            background: #f8fafc;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 10px 14px;
+            font-size: 14px;
+            color: #1e293b;
+            outline: none;
+            font-family: 'Sarabun', sans-serif;
+            transition: border-color 0.2s;
+            box-sizing: border-box;
+        }
+        .input-field:focus { border-color: #16a34a; }
+        .input-dark {
+            background: #334155;
+            border: 1.5px solid #475569;
+            border-radius: 10px;
+            padding: 8px 12px;
+            font-size: 13px;
+            color: white;
+            outline: none;
+            font-family: 'Sarabun', sans-serif;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .input-dark:focus { border-color: #22c55e; }
+
+        /* === SECTION HEADER === */
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+        .section-title {
+            font-size: 14px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* === LOCKED BANNER === */
+        .locked-banner {
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            border: 2px solid #f59e0b;
+            border-radius: 14px;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* === NOT MEMBER SCREEN === */
+        .not-member-screen {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            text-align: center;
+        }
+
+        /* === ANIMATIONS === */
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-up { animation: fadeUp 0.3s ease forwards; }
+
+        /* === MODAL === */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.75);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 50;
+        }
+
+        /* === SELECT === */
+        .select-field {
+            width: 100%;
+            background: #f8fafc;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 10px 14px;
+            font-size: 14px;
+            color: #1e293b;
+            outline: none;
+            font-family: 'Sarabun', sans-serif;
+            appearance: none;
+        }
+        .select-field:focus { border-color: #16a34a; }
+
+        /* === LOADING === */
+        .loading-dots {
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+            align-items: center;
+            padding: 30px;
+        }
+        .loading-dots span {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: #22c55e;
+            animation: bounce 1.2s infinite;
+        }
+        .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes bounce {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-8px); }
+        }
+    </style>
 </head>
-<body class="bg-slate-100 font-sans min-h-screen pb-12">
+<body>
 
-    <div class="bg-gradient-to-r from-green-500 to-emerald-600 text-white py-6 px-4 shadow-md text-center rounded-b-3xl">
-        <h1 class="text-2xl font-bold flex justify-center items-center gap-2">🏸 ก๊วนบ๊อกแบ๊ก แบดมินตัน 🐾</h1>
-        <p class="text-sm opacity-90 mt-1">ระบบลงชื่อคิวและคำนวณเงินแชร์ตี้แบด</p>
+<!-- ===== LOADING SCREEN ===== -->
+<div id="screen-loading" class="not-member-screen">
+    <div style="font-size:56px; margin-bottom:12px;">🏸</div>
+    <p style="font-size:16px; font-weight:700; color:#16a34a;">กำลังโหลดระบบ...</p>
+    <div class="loading-dots" style="margin-top:8px;">
+        <span></span><span></span><span></span>
     </div>
+</div>
 
-    <div id="user-profile" class="max-w-md mx-auto mt-4 px-4 hidden">
-        <div class="bg-white p-3 rounded-2xl shadow-sm flex items-center gap-3 border border-slate-200">
-            <img id="user-avatar" class="w-12 h-12 rounded-full border-2 border-green-500" src="" alt="Avatar">
-            <div class="flex-1">
-                <p class="text-xs text-slate-400">ผู้ใช้งานปัจจุบัน</p>
-                <p id="user-name" class="font-bold text-slate-700">กำลังโหลดข้อมูลโปรไฟล์...</p>
+<!-- ===== NOT MEMBER SCREEN ===== -->
+<div id="screen-not-member" class="not-member-screen hidden">
+    <div style="font-size:72px; margin-bottom:16px;">🚫</div>
+    <h2 style="font-size:20px; font-weight:800; color:#1e293b; margin-bottom:8px;">ขออภัยครับ!</h2>
+    <p style="color:#64748b; font-size:15px; line-height:1.6;">ระบบนี้จำกัดเฉพาะสมาชิกกลุ่ม LINE<br><strong style="color:#16a34a;">ก๊วนบ๊อกแบ๊ก แบดมินตัน</strong> เท่านั้น</p>
+    <p style="color:#94a3b8; font-size:13px; margin-top:12px;">กรุณาขอเข้าร่วมกลุ่มก่อนนะครับ 🐾</p>
+</div>
+
+<!-- ===== MAIN APP ===== -->
+<div id="screen-main" class="hidden pb-16">
+
+    <!-- HEADER -->
+    <div class="hero-header">
+        <div style="max-width:440px; margin:0 auto; position:relative; z-index:1;">
+            <p style="font-size:11px; color:#bbf7d0; font-weight:600; letter-spacing:1px; margin-bottom:4px;">ก๊วนบ๊อกแบ๊ก 🐾</p>
+            <h1 style="font-size:24px; font-weight:800; color:white; line-height:1.2; margin-bottom:4px;">ระบบลงชื่อตี้แบด<br>& แชร์ค่าคอร์ด</h1>
+            <!-- User Profile mini -->
+            <div id="user-profile" class="hidden" style="margin-top:14px; background:rgba(255,255,255,0.15); border-radius:14px; padding:8px 12px; display:flex; align-items:center; gap:10px; backdrop-filter:blur(4px);">
+                <img id="user-avatar" class="w-10 h-10 rounded-full border-2 border-white/50" src="" alt="">
+                <div style="flex:1;">
+                    <p style="font-size:10px; color:#bbf7d0; margin:0;">ยินดีต้อนรับ</p>
+                    <p id="user-name" style="font-size:14px; font-weight:700; color:white; margin:0;"></p>
+                </div>
+                <span id="badge-admin" class="hidden" style="background:rgba(251,191,36,0.25); color:#fde68a; font-size:10px; font-weight:700; padding:3px 8px; border-radius:999px; border:1px solid rgba(251,191,36,0.4);">👑 เจ้าของตี้</span>
             </div>
-            <span id="badge-admin" class="hidden bg-amber-100 text-amber-700 text-xs px-2.5 py-1 rounded-full font-bold border border-amber-200">👑 เจ้าของตี้นี้</span>
         </div>
     </div>
 
-    <div class="max-w-md mx-auto mt-4 px-4">
-        <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
-            <label class="block text-xs font-bold text-slate-500 mb-1">เลือกตี้แบดมินตันที่ต้องการเข้าร่วม:</label>
-            <select id="match-selector" onchange="switchMatch(this.value)" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-2 py-1.5 text-sm text-slate-700 font-medium focus:outline-none focus:ring-1 focus:ring-green-500">
-                <option value="">-- กำลังโหลดรายการตี้แบดทั้งหมด... --</option>
-            </select>
-        </div>
-    </div>
+    <div style="max-width:440px; margin:0 auto; padding:0 14px;">
 
-    <div id="admin-panel" class="max-w-md mx-auto mt-4 px-4">
-        <div id="panel-create" class="bg-gradient-to-br from-slate-700 to-slate-800 text-white p-5 rounded-2xl shadow-md border border-slate-600 hidden">
-            <h2 class="text-md font-bold border-b border-slate-600 pb-2 mb-3 flex items-center gap-2 text-amber-400">✨ เปิดตี้แบดมินตันใหม่</h2>
-            <div class="space-y-3">
+        <!-- MATCH SELECTOR -->
+        <div class="card fade-up" style="margin-top:-14px; position:relative; z-index:5;">
+            <label style="font-size:11px; font-weight:700; color:#64748b; display:block; margin-bottom:6px;">📋 เลือกตี้แบดที่ต้องการ</label>
+            <div style="position:relative;">
+                <select id="match-selector" onchange="switchMatch(this.value)" class="select-field">
+                    <option value="">-- กำลังโหลดรายการตี้... --</option>
+                </select>
+                <div style="position:absolute; right:12px; top:50%; transform:translateY(-50%); pointer-events:none; color:#64748b;">▾</div>
+            </div>
+        </div>
+
+        <!-- LOCKED BANNER -->
+        <div id="locked-banner" class="hidden fade-up" style="margin-top:12px;">
+            <div class="locked-banner">
+                <span style="font-size:24px;">🔒</span>
                 <div>
-                    <label class="block text-xs opacity-70 mb-1">สถานที่ / สนามแบดมินตัน</label>
-                    <input type="text" id="input-location" placeholder="เช่น สนามแบดมินตัน สเตเดียม" class="w-full bg-slate-600 border border-slate-500 rounded-lg px-3 py-2 text-sm text-white focus:outline-none">
+                    <p style="font-size:13px; font-weight:800; color:#92400e; margin:0;">ระบบล็อครายชื่อแล้ว</p>
+                    <p style="font-size:12px; color:#a16207; margin:0;">เหลือน้อยกว่า 1 ชม. ไม่สามารถยกเลิกได้แล้วครับ</p>
                 </div>
-                <div class="grid grid-cols-3 gap-2">
-                    <div class="col-span-1">
-                        <label class="block text-xs opacity-70 mb-1">วันที่ตี</label>
-                        <input type="date" id="input-date" class="w-full bg-slate-600 border border-slate-500 rounded-lg px-2 py-2 text-xs text-white focus:outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-xs opacity-70 mb-1">เวลาเริ่ม</label>
-                        <input type="time" id="input-time" class="w-full bg-slate-600 border border-slate-500 rounded-lg px-2 py-2 text-xs text-white focus:outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-xs opacity-70 mb-1">เวลาจบ</label>
-                        <input type="time" id="input-endtime" class="w-full bg-slate-600 border border-slate-500 rounded-lg px-2 py-2 text-xs text-white focus:outline-none">
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-xs opacity-70 mb-1">จำนวนผู้เล่นตัวจริงสูงสุด (คน)</label>
-                    <input type="number" id="input-max" value="6" min="1" class="w-full bg-slate-600 border border-slate-500 rounded-lg px-3 py-2 text-sm text-white focus:outline-none">
-                </div>
-                <button onclick="createNewMatch()" class="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold py-2.5 rounded-xl text-sm transition-all mt-1">🚀 ยืนยันเปิดตี้และส่งการ์ดเชิญเข้ากลุ่ม LINE</button>
             </div>
         </div>
 
-        <div id="panel-manage" class="bg-gradient-to-br from-slate-700 to-slate-800 text-white p-4 rounded-2xl shadow-md border border-slate-600 hidden space-y-3 mt-4">
-            <div class="flex items-center justify-between border-b border-slate-600 pb-2">
-                <span class="text-xs text-amber-400 font-bold flex items-center gap-1">🛠️ ระบบจัดการประจำตี้ของคุณ</span>
-                <button onclick="deleteMatch()" class="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-colors">🗑️ ยกเลิก/ลบตี้นี้</button>
+        <!-- MATCH INFO CARD -->
+        <div id="match-card" class="card fade-up" style="margin-top:12px;">
+            <div class="section-header">
+                <span class="section-title" style="color:#1e293b;">📍 รายละเอียดตี้</span>
+                <span id="match-status-tag" class="badge badge-open">🏸 เปิดรับคน</span>
             </div>
-            
-            <div id="billing-setup-box" class="bg-slate-800/80 p-3 rounded-xl border border-slate-600 space-y-2">
-                <h3 class="text-xs font-bold text-emerald-400">💰 คำนวณสรุปค่าใช้จ่ายเรียกเก็บเงินคนแชร์ตี้</h3>
-                <div class="grid grid-cols-2 gap-2 text-xs">
-                    <div>
-                        <label class="block opacity-70 mb-0.5">ค่าคอร์ด / ชั่วโมง (บาท)</label>
-                        <input type="number" id="bill-court-rate" value="160" class="w-full bg-slate-700 border border-slate-500 rounded p-1 text-white">
-                    </div>
-                    <div>
-                        <label class="block opacity-70 mb-0.5">จำนวนชั่วโมงที่ใช้</label>
-                        <input type="number" id="bill-hours" value="2" class="w-full bg-slate-700 border border-slate-500 rounded p-1 text-white">
-                    </div>
-                    <div>
-                        <label class="block opacity-70 mb-0.5">จำนวนคอร์ดที่จอง</label>
-                        <input type="number" id="bill-court-count" value="1" class="w-full bg-slate-700 border border-slate-500 rounded p-1 text-white">
-                    </div>
-                    <div>
-                        <label class="block opacity-70 mb-0.5">รวมค่าลูกแบดมินตันทั้งหมด</label>
-                        <input type="number" id="bill-shuttlecock" value="120" class="w-full bg-slate-700 border border-slate-500 rounded p-1 text-white">
-                    </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <div style="background:#f8fafc; border-radius:12px; padding:10px 12px;">
+                    <p style="font-size:10px; color:#94a3b8; margin:0 0 2px 0; font-weight:600;">📍 สนาม</p>
+                    <p id="match-location" style="font-size:13px; font-weight:700; color:#1e293b; margin:0;">-</p>
                 </div>
-                <div>
-                    <label class="block text-xs opacity-70 mb-0.5">ข้อมูลบัญชี/ธนาคารของหัวตี้เพื่อให้สมาชิกโอนคืน</label>
-                    <input type="text" id="bill-bank" placeholder="กสิกร นายบ๊อกแบ๊ก 012-3-45678-9" class="w-full bg-slate-700 border border-slate-500 rounded p-1.5 text-xs text-white">
+                <div style="background:#f8fafc; border-radius:12px; padding:10px 12px;">
+                    <p style="font-size:10px; color:#94a3b8; margin:0 0 2px 0; font-weight:600;">📅 วันที่</p>
+                    <p id="match-date" style="font-size:13px; font-weight:700; color:#1e293b; margin:0;">-</p>
                 </div>
-                <div class="bg-slate-900/60 p-2 rounded text-center">
-                    <p class="text-xs opacity-80">ยอดคำนวณระบบเบื้องต้น: <span id="calc-preview-total" class="font-bold text-white">0</span> บาท</p>
-                    <p class="text-xs text-amber-300">หารเฉลี่ยสมาชิกตี้จริง: <span id="calc-preview-split" class="font-bold text-lg">0</span> บาท/คน</p>
+                <div style="background:#f8fafc; border-radius:12px; padding:10px 12px;">
+                    <p style="font-size:10px; color:#94a3b8; margin:0 0 2px 0; font-weight:600;">⏰ เวลา</p>
+                    <p id="match-time" style="font-size:13px; font-weight:700; color:#1e293b; margin:0;">-</p>
                 </div>
-                <div>
-                    <label class="block text-xs text-yellow-400 mb-0.5">✍️ หัวตี้ปรับแก้ยอดเงินสุทธิรวมได้ที่นี่ (ถ้าต้องการ):</label>
-                    <input type="number" id="bill-final-custom" placeholder="ปล่อยว่างไว้หากต้องการใช้ยอดคำนวณปกติ" class="w-full bg-slate-700 border border-yellow-500 rounded p-1.5 text-sm text-yellow-300 font-bold">
+                <div style="background:#f8fafc; border-radius:12px; padding:10px 12px;">
+                    <p style="font-size:10px; color:#94a3b8; margin:0 0 2px 0; font-weight:600;">👑 หัวตี้</p>
+                    <p id="match-creator" style="font-size:13px; font-weight:700; color:#d97706; margin:0;">-</p>
                 </div>
-                <button onclick="triggerBillingSubmit()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 rounded text-xs transition-colors shadow">📢 ยืนยันและส่งบิลเรียกเก็บเงินเข้ากลุ่ม LINE</button>
-            </div>
-        </div>
-    </div>
-
-    <div class="max-w-md mx-auto mt-4 px-4">
-        <div id="match-card" class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
-            <h2 class="text-lg font-bold text-slate-800 border-b pb-2 mb-3 flex justify-between items-center">
-                <span>📍 รายละเอียดข้อมูลแมตช์</span>
-                <span id="match-status-tag" class="text-xs bg-green-100 text-green-700 px-2.5 py-0.5 rounded-full font-medium">เปิดรับสมัคร</span>
-            </h2>
-            <div id="match-display-info" class="space-y-2 text-sm text-slate-600">
-                <p><strong>สถานที่แข่งขัน:</strong> <span id="match-location">กรุณาเลือกตี้ด้านบน หรือสร้างตี้ใหม่</span></p>
-                <p><strong>เวลากิจกรรม:</strong> <span id="match-time">-</span></p>
-                <p><strong>ผู้สร้างตี้หลัก:</strong> <span id="match-creator" class="text-amber-600 font-semibold">-</span></p>
-                <p><strong>ข้อจำกัดผู้เล่น:</strong> <span id="match-slots" class="text-green-600 font-semibold">-</span></p>
-            </div>
-        </div>
-    </div>
-
-    <div id="user-actions" class="max-w-md mx-auto mt-5 px-4 flex gap-3 hidden">
-        <button id="btn-join" onclick="joinMatch()" class="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-xl shadow-md transition-all text-sm">🙋‍♂️ ลงชื่อเข้าตี้</button>
-        <button id="btn-leave" onclick="leaveMatch()" class="flex-1 bg-rose-500 hover:bg-rose-600 text-white font-bold py-3 px-4 rounded-xl shadow-md transition-all text-sm">❌ ยกเลิกคิว/ถอนตัว</button>
-    </div>
-
-    <div id="player-lists-container" class="max-w-md mx-auto mt-4 px-4 space-y-4 hidden">
-        
-        <div id="invoice-display-card" class="bg-amber-50 p-4 rounded-2xl border-2 border-amber-300 hidden shadow-sm">
-            <h3 class="font-bold text-amber-800 text-sm mb-1 flex items-center gap-1">💰 สรุปรายละเอียดการเก็บเงินค่าคอร์ด</h3>
-            <p id="invoice-text-details" class="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed bg-white/70 p-2.5 rounded-lg border border-amber-200"></p>
-            <div class="mt-3 p-2 bg-white rounded-lg border border-amber-200">
-                <p class="text-xs font-bold text-amber-700">📎 แนบไฟล์ภาพหลักฐานการโอนเงิน (สลิป):</p>
-                <input type="file" id="input-slip-file" accept="image/*" class="mt-1 block w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-amber-100 file:text-amber-700">
-                <button onclick="uploadPaymentSlip()" class="mt-2 w-full bg-amber-600 hover:bg-amber-700 text-white text-xs py-1.5 rounded-lg font-bold transition-colors">📤 คลิกอัปโหลดส่งให้หัวตี้ตรวจสอบ</button>
             </div>
         </div>
 
-        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
-            <h3 class="font-bold text-emerald-600 border-b pb-2 mb-2 flex justify-between">
-                <span>🔥 รายชื่อสมาชิกตัวจริง & การชำระเงิน</span>
-                <span id="count-real" class="text-sm text-slate-500">0 คน</span>
-            </h3>
-            <div id="list-real" class="space-y-2 text-slate-700 text-sm"></div>
+        <!-- JOIN/LEAVE BUTTONS -->
+        <div id="user-actions" class="hidden fade-up" style="margin-top:12px; display:flex; gap:10px;">
+            <button id="btn-join" class="btn-join" onclick="joinMatch()">🙋‍♂️ ลงชื่อเข้าตี้</button>
+            <button id="btn-leave" class="btn-leave" onclick="leaveMatch()">❌ ถอนตัว</button>
         </div>
 
-        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
-            <h3 class="font-bold text-amber-600 border-b pb-2 mb-2 flex justify-between">
-                <span>⏳ รายชื่อคิวสำรองตกค้าง</span>
-                <span id="count-waiting" class="text-sm text-slate-500">0 คน</span>
-            </h3>
-            <div id="list-waiting" class="space-y-1 text-slate-700 text-sm"></div>
+        <!-- PLAYER LISTS CONTAINER -->
+        <div id="player-lists-container" class="hidden fade-up">
+
+            <!-- SUMMARY BAR -->
+            <div class="summary-bar" style="margin-top:12px;">
+                <div class="summary-stat">
+                    <div id="stat-real" class="num">0</div>
+                    <div class="lbl">ตัวจริง</div>
+                </div>
+                <div style="width:1px; background:#334155;"></div>
+                <div class="summary-stat">
+                    <div id="stat-max" class="num" style="color:#94a3b8;">0</div>
+                    <div class="lbl">เต็มสูงสุด</div>
+                </div>
+                <div style="width:1px; background:#334155;"></div>
+                <div class="summary-stat">
+                    <div id="stat-waiting" class="num" style="color:#f59e0b;">0</div>
+                    <div class="lbl">สำรอง</div>
+                </div>
+            </div>
+
+            <!-- REAL PLAYERS LIST -->
+            <div class="card" style="margin-top:10px;">
+                <div class="section-header">
+                    <span class="section-title" style="color:#16a34a;">🔥 รายชื่อตัวจริง</span>
+                    <span id="count-real" style="font-size:12px; color:#64748b; font-weight:600; background:#f0fdf4; padding:3px 10px; border-radius:999px;">0 คน</span>
+                </div>
+                <div id="list-real"></div>
+            </div>
+
+            <!-- WAITING LIST -->
+            <div class="card" style="margin-top:10px;">
+                <div class="section-header">
+                    <span class="section-title" style="color:#d97706;">⏳ คิวสำรอง</span>
+                    <span id="count-waiting" style="font-size:12px; color:#64748b; font-weight:600; background:#fffbeb; padding:3px 10px; border-radius:999px;">0 คน</span>
+                </div>
+                <div id="list-waiting"></div>
+            </div>
+
+            <!-- BILLING INVOICE (สำหรับสมาชิก) -->
+            <div id="invoice-display-card" class="hidden fade-up" style="margin-top:10px;">
+                <div style="background:linear-gradient(135deg, #f59e0b, #d97706); border-radius:20px; padding:18px;">
+                    <p style="font-size:13px; font-weight:800; color:white; margin:0 0 4px 0;">💰 สรุปค่าใช้จ่ายตี้นี้</p>
+                    <pre id="invoice-text-details" style="font-size:12px; color:#fef3c7; white-space:pre-wrap; margin:8px 0; background:rgba(0,0,0,0.15); border-radius:10px; padding:10px; line-height:1.6;"></pre>
+                    <div style="background:white; border-radius:14px; padding:14px; margin-top:10px;">
+                        <p style="font-size:12px; font-weight:700; color:#92400e; margin:0 0 8px 0;">📎 แนบสลิปโอนเงิน</p>
+                        <input type="file" id="input-slip-file" accept="image/*" 
+                            style="width:100%; font-size:12px; color:#64748b; margin-bottom:8px;"
+                            onchange="previewSlip(this)">
+                        <img id="slip-preview" style="display:none; width:100%; border-radius:10px; margin-bottom:8px; max-height:180px; object-fit:cover;">
+                        <button onclick="uploadPaymentSlip()" 
+                            style="width:100%; background:linear-gradient(135deg,#f59e0b,#d97706); color:white; border:none; border-radius:10px; padding:10px; font-size:13px; font-weight:700; cursor:pointer; font-family:'Sarabun',sans-serif;">
+                            📤 ส่งสลิปให้หัวตี้ตรวจ
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
+
+        <!-- DEBT TRACKER (Khun Thong Style) — เฉพาะสมาชิกตอน billing -->
+        <div id="debt-tracker-section" class="hidden fade-up" style="margin-top:12px;">
+            <div class="card">
+                <div class="section-header">
+                    <span class="section-title" style="color:#1e293b;">📊 ติดตามสถานะการจ่ายเงิน</span>
+                </div>
+                <!-- Progress bar -->
+                <div style="background:#f1f5f9; border-radius:999px; height:8px; margin-bottom:14px; overflow:hidden;">
+                    <div id="pay-progress-bar" style="height:100%; background:linear-gradient(90deg,#22c55e,#16a34a); border-radius:999px; transition:width 0.5s; width:0%;"></div>
+                </div>
+                <div id="pay-progress-label" style="font-size:12px; color:#64748b; text-align:center; margin-bottom:14px; margin-top:-10px;"></div>
+                <div id="debt-tracker-list"></div>
+            </div>
+        </div>
+
+        <!-- ADMIN PANEL -->
+        <div id="admin-panel" class="hidden fade-up" style="margin-top:12px;">
+
+            <!-- CREATE MATCH -->
+            <div id="panel-create" class="card-dark hidden">
+                <p style="font-size:13px; font-weight:800; color:#fbbf24; margin:0 0 14px 0; border-bottom:1px solid #334155; padding-bottom:10px;">✨ เปิดตี้แบดมินตันใหม่</p>
+                <div style="display:flex; flex-direction:column; gap:10px;">
+                    <div>
+                        <label style="font-size:11px; color:#94a3b8; display:block; margin-bottom:4px;">📍 สนาม / สถานที่</label>
+                        <input type="text" id="input-location" placeholder="เช่น สนาม ABC Badminton" class="input-dark">
+                    </div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;">
+                        <div>
+                            <label style="font-size:11px; color:#94a3b8; display:block; margin-bottom:4px;">📅 วันที่</label>
+                            <input type="date" id="input-date" class="input-dark" style="font-size:12px;">
+                        </div>
+                        <div>
+                            <label style="font-size:11px; color:#94a3b8; display:block; margin-bottom:4px;">⏰ เริ่ม</label>
+                            <input type="time" id="input-time" class="input-dark" style="font-size:12px;">
+                        </div>
+                        <div>
+                            <label style="font-size:11px; color:#94a3b8; display:block; margin-bottom:4px;">⏰ จบ</label>
+                            <input type="time" id="input-endtime" class="input-dark" style="font-size:12px;">
+                        </div>
+                    </div>
+                    <div>
+                        <label style="font-size:11px; color:#94a3b8; display:block; margin-bottom:4px;">👥 รับตัวจริงสูงสุด (คน)</label>
+                        <input type="number" id="input-max" value="6" min="1" class="input-dark">
+                    </div>
+                    <button onclick="createNewMatch()" class="btn-primary" style="margin-top:4px;">
+                        🚀 เปิดตี้ & แจ้งกลุ่ม LINE
+                    </button>
+                </div>
+            </div>
+
+            <!-- MANAGE MATCH -->
+            <div id="panel-manage" class="card-dark hidden" style="margin-top:12px;">
+                <div style="display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #334155; padding-bottom:10px; margin-bottom:14px;">
+                    <p style="font-size:13px; font-weight:800; color:#fbbf24; margin:0;">🛠️ จัดการตี้ของฉัน</p>
+                    <button onclick="deleteMatch()" class="btn-danger">🗑️ ยกเลิกตี้</button>
+                </div>
+
+                <!-- BILLING SETUP -->
+                <div id="billing-setup-box">
+                    <p style="font-size:12px; font-weight:700; color:#34d399; margin:0 0 10px 0;">💰 คำนวณ & เรียกเก็บเงินค่าคอร์ด</p>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                        <div>
+                            <label style="font-size:11px; color:#94a3b8; display:block; margin-bottom:3px;">ค่าคอร์ด/ชม. (฿)</label>
+                            <input type="number" id="bill-court-rate" value="160" class="input-dark">
+                        </div>
+                        <div>
+                            <label style="font-size:11px; color:#94a3b8; display:block; margin-bottom:3px;">จำนวนชั่วโมง</label>
+                            <input type="number" id="bill-hours" value="2" class="input-dark">
+                        </div>
+                        <div>
+                            <label style="font-size:11px; color:#94a3b8; display:block; margin-bottom:3px;">จำนวนคอร์ด</label>
+                            <input type="number" id="bill-court-count" value="1" class="input-dark">
+                        </div>
+                        <div>
+                            <label style="font-size:11px; color:#94a3b8; display:block; margin-bottom:3px;">ค่าลูกแบด (฿)</label>
+                            <input type="number" id="bill-shuttlecock" value="120" class="input-dark">
+                        </div>
+                    </div>
+                    <!-- Live preview -->
+                    <div style="background:#0f172a; border-radius:12px; padding:12px; margin:10px 0; text-align:center;">
+                        <p style="font-size:11px; color:#94a3b8; margin:0 0 4px 0;">ยอดรวมทั้งหมด</p>
+                        <p style="font-size:28px; font-weight:800; color:white; margin:0;"><span id="calc-preview-total">0</span> <span style="font-size:14px; color:#64748b;">บาท</span></p>
+                        <div style="border-top:1px solid #1e293b; margin:8px 0; padding-top:8px;">
+                            <p style="font-size:11px; color:#94a3b8; margin:0 0 2px 0;">หารเฉลี่ย/คน</p>
+                            <p style="font-size:22px; font-weight:800; color:#34d399; margin:0;"><span id="calc-preview-split">0</span> <span style="font-size:13px; color:#64748b;">บาท</span></p>
+                        </div>
+                    </div>
+                    <div>
+                        <label style="font-size:11px; color:#fbbf24; display:block; margin-bottom:3px;">✍️ ปรับยอดรวมเองได้ (ถ้าต้องการ)</label>
+                        <input type="number" id="bill-final-custom" placeholder="ปล่อยว่างเพื่อใช้ยอดคำนวณ" class="input-dark" style="border-color:#f59e0b;">
+                    </div>
+                    <div style="margin-top:10px;">
+                        <label style="font-size:11px; color:#94a3b8; display:block; margin-bottom:3px;">🏦 เลขบัญชีรับเงิน</label>
+                        <input type="text" id="bill-bank" placeholder="ธ.กสิกร 012-3-45678-9 นายบ๊อกแบ๊ก" class="input-dark">
+                    </div>
+                    <button onclick="triggerBillingSubmit()" 
+                        style="width:100%; margin-top:10px; background:linear-gradient(135deg,#059669,#047857); color:white; border:none; border-radius:12px; padding:11px; font-size:13px; font-weight:700; cursor:pointer; font-family:'Sarabun',sans-serif;">
+                        📢 ส่งบิลเรียกเก็บเงินเข้ากลุ่ม LINE
+                    </button>
+                </div>
+            </div>
+
+            <!-- SHOW CREATE BUTTON (when no match) -->
+            <div id="btn-show-create" style="margin-top:12px;">
+                <!-- shown by JS -->
+            </div>
+        </div>
+
     </div>
+</div>
 
-    <div id="image-modal" onclick="this.classList.add('hidden')" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 hidden">
-        <img id="modal-img-frame" src="" class="max-w-full max-h-full rounded shadow-xl" alt="Slip Enlarged">
-    </div>
+<!-- IMAGE MODAL -->
+<div id="image-modal" onclick="this.classList.add('hidden')" class="modal-overlay hidden">
+    <img id="modal-img-frame" src="" style="max-width:100%; max-height:90vh; border-radius:16px; box-shadow:0 20px 60px rgba(0,0,0,0.5);" alt="Slip">
+    <p style="position:absolute; bottom:20px; color:rgba(255,255,255,0.6); font-size:13px;">แตะใดๆ เพื่อปิด</p>
+</div>
 
-    <script>
-        const LIFF_ID = '2010400559-X4eBS5zg'; 
-        const firebaseConfig = {
-            apiKey: "AIzaSyC1Hl0kB27UqbZZXJdfkWgGimvmWo13rLg",
-            authDomain: "bokbak-badminton.firebaseapp.com",
-            projectId: "bokbak-badminton",
-            databaseURL: "https://bokbak-badminton-default-rtdb.firebaseio.com",
-            storageBucket: "bokbak-badminton.firebasestorage.app",
-            messagingSenderId: "343879156501",
-            appId: "1:343879156501:web:5f3f6d24bbc3928ea8df1c"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
+<script>
+    const LIFF_ID = '2010400559-X4eBS5zg';
+    const CLOUD_BASE = 'https://us-central1-bokbak-badminton.cloudfunctions.net';
+    const firebaseConfig = {
+        apiKey: "AIzaSyC1Hl0kB27UqbZZXJdfkWgGimvmWo13rLg",
+        authDomain: "bokbak-badminton.firebaseapp.com",
+        projectId: "bokbak-badminton",
+        databaseURL: "https://bokbak-badminton-default-rtdb.firebaseio.com",
+        storageBucket: "bokbak-badminton.firebasestorage.app",
+        messagingSenderId: "343879156501",
+        appId: "1:343879156501:web:5f3f6d24bbc3928ea8df1c"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
 
-        let userId = '';
-        let displayName = '';
-        let pictureUrl = '';
-        
-        let selectedMatchId = ''; 
-        let globalMatchesData = {};
-        let currentMatch = null;
-        let registrations = [];
+    let userId = '';
+    let displayName = '';
+    let pictureUrl = '';
+    let selectedMatchId = '';
+    let globalMatchesData = {};
+    let currentMatch = null;
+    let registrations = [];
 
-        async function initLiff() {
-            try {
-                await liff.init({ liffId: LIFF_ID });
-                if (liff.isLoggedIn()) { 
-                    getUserProfile(); 
-                } else { 
-                    liff.login(); 
-                }
-            } catch (error) { 
-                console.error('LIFF Init Error', error); 
+    // ========== LIFF INIT ==========
+    async function initLiff() {
+        try {
+            await liff.init({ liffId: LIFF_ID });
+            if (liff.isLoggedIn()) {
+                await getUserProfile();
+            } else {
+                liff.login();
             }
+        } catch (error) {
+            console.error('LIFF Error', error);
+            showScreen('main'); // fallback
         }
+    }
 
-        async function getUserProfile() {
-            const profile = await liff.getProfile();
-            userId = profile.userId;
-            displayName = profile.displayName;
-            pictureUrl = profile.pictureUrl;
+    async function getUserProfile() {
+        const profile = await liff.getProfile();
+        userId = profile.userId;
+        displayName = profile.displayName;
+        pictureUrl = profile.pictureUrl;
 
-            document.getElementById('user-name').innerText = displayName;
-            document.getElementById('user-avatar').src = pictureUrl || 'https://cdn-icons-png.flaticon.com/512/1077/1077114.png';
-            document.getElementById('user-profile').classList.remove('hidden');
-            
-            const urlParams = new URLSearchParams(window.location.search);
-            if(urlParams.get('matchId')) { 
-                selectedMatchId = urlParams.get('matchId'); 
-            }
-
-            listenGlobalDatabase();
-        }
-
-        function setupLiveBillingCalculators() {
-            const inputs = ['bill-court-rate', 'bill-hours', 'bill-court-count', 'bill-shuttlecock', 'bill-final-custom'];
-            inputs.forEach(id => {
-                document.getElementById(id)?.addEventListener('input', updateLiveCalcPreview);
+        // ✅ ตรวจสอบสมาชิกกลุ่ม
+        try {
+            const res = await fetch(`${CLOUD_BASE}/apiCheckGroupMember`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ data: { userId } })
             });
-        }
-
-        function updateLiveCalcPreview() {
-            if (!currentMatch) return;
-            const rate = parseFloat(document.getElementById('bill-court-rate').value) || 0;
-            const hrs = parseFloat(document.getElementById('bill-hours').value) || 0;
-            const courts = parseFloat(document.getElementById('bill-court-count').value) || 0;
-            const balls = parseFloat(document.getElementById('bill-shuttlecock').value) || 0;
-
-            const calculatedTotal = (rate * hrs * courts) + balls;
-            document.getElementById('calc-preview-total').innerText = calculatedTotal;
-
-            const headcount = registrations.length || 1;
-            const customFinal = parseFloat(document.getElementById('bill-final-custom').value);
-            const finalTotal = !isNaN(customFinal) ? customFinal : calculatedTotal;
-
-            document.getElementById('calc-preview-split').innerText = (finalTotal / headcount).toFixed(2);
-        }
-
-        function listenGlobalDatabase() {
-            db.ref('matches').on('value', (snapshot) => {
-                globalMatchesData = snapshot.val() || {};
-                renderSelectorDropdown();
-                
-                if (!selectedMatchId || !globalMatchesData[selectedMatchId]) {
-                    const keys = Object.keys(globalMatchesData);
-                    selectedMatchId = keys.length > 0 ? keys[0] : '';
-                }
-                
-                if (selectedMatchId && globalMatchesData[selectedMatchId]) {
-                    currentMatch = globalMatchesData[selectedMatchId];
-                    const regObj = currentMatch.registrations || {};
-                    registrations = Object.keys(regObj).map(k => regObj[k]).sort((a,b) => a.timestamp - b.timestamp);
-                } else {
-                    currentMatch = null;
-                    registrations = [];
-                }
-                
-                renderMatchPage();
-                updateLiveCalcPreview();
-            });
-        }
-
-        function renderSelectorDropdown() {
-            const selector = document.getElementById('match-selector');
-            selector.innerHTML = '';
-            const keys = Object.keys(globalMatchesData);
-            
-            if (keys.length === 0) {
-                selector.innerHTML = '<option value="">-- ยังไม่มีการเปิดสร้างตี้แบดใดๆ ในระบบ --</option>';
+            const result = await res.json();
+            if (!result.data?.isMember) {
+                showScreen('not-member');
                 return;
             }
-            
-            keys.forEach(k => {
-                const m = globalMatchesData[k];
-                const opt = document.createElement('option');
-                opt.value = k;
-                opt.selected = (k === selectedMatchId);
-                opt.innerText = `สนาม: ${m.location} [${m.time} น. - ${m.endTime} น.] (${m.status === 'billing' ? '💰 รอเก็บเงิน' : '🏸 เปิดรับคน'})`;
-                selector.appendChild(opt);
-            });
+        } catch(e) {
+            // ถ้า API พัง ให้ผ่านไปก่อน (fail-open)
+            console.warn('Member check failed, proceeding...', e);
         }
 
-        function switchMatch(id) {
-            selectedMatchId = id;
-            if(id && globalMatchesData[id]) {
-                currentMatch = globalMatchesData[id];
+        // Set profile UI
+        document.getElementById('user-name').innerText = displayName;
+        document.getElementById('user-avatar').src = pictureUrl || '';
+        document.getElementById('user-profile').style.display = 'flex';
+        document.getElementById('user-profile').classList.remove('hidden');
+
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('matchId')) selectedMatchId = urlParams.get('matchId');
+
+        showScreen('main');
+        listenGlobalDatabase();
+    }
+
+    function showScreen(name) {
+        document.getElementById('screen-loading').classList.add('hidden');
+        document.getElementById('screen-not-member').classList.add('hidden');
+        document.getElementById('screen-main').classList.add('hidden');
+        document.getElementById('screen-' + name).classList.remove('hidden');
+    }
+
+    // ========== DATABASE ==========
+    function listenGlobalDatabase() {
+        db.ref('matches').on('value', (snapshot) => {
+            globalMatchesData = snapshot.val() || {};
+            renderSelectorDropdown();
+
+            if (!selectedMatchId || !globalMatchesData[selectedMatchId]) {
+                const keys = Object.keys(globalMatchesData);
+                selectedMatchId = keys.length > 0 ? keys[0] : '';
+            }
+
+            if (selectedMatchId && globalMatchesData[selectedMatchId]) {
+                currentMatch = globalMatchesData[selectedMatchId];
                 const regObj = currentMatch.registrations || {};
-                registrations = Object.keys(regObj).map(k => regObj[k]).sort((a,b) => a.timestamp - b.timestamp);
+                registrations = Object.keys(regObj).map(k => regObj[k]).sort((a, b) => a.timestamp - b.timestamp);
             } else {
                 currentMatch = null;
                 registrations = [];
             }
+
             renderMatchPage();
             updateLiveCalcPreview();
+        });
+    }
+
+    function renderSelectorDropdown() {
+        const selector = document.getElementById('match-selector');
+        selector.innerHTML = '';
+        const keys = Object.keys(globalMatchesData);
+        if (keys.length === 0) {
+            selector.innerHTML = '<option value="">-- ยังไม่มีตี้ในระบบ --</option>';
+            return;
         }
+        keys.forEach(k => {
+            const m = globalMatchesData[k];
+            const opt = document.createElement('option');
+            opt.value = k;
+            opt.selected = (k === selectedMatchId);
+            const statusLabel = m.status === 'billing' ? '💰 เรียกเก็บเงิน' : m.isLocked ? '🔒 ล็อคแล้ว' : '🏸 เปิดรับคน';
+            opt.innerText = `${m.location} [${m.time}-${m.endTime}น.] ${statusLabel}`;
+            selector.appendChild(opt);
+        });
+    }
 
-        function renderMatchPage() {
-            document.getElementById('panel-create').classList.remove('hidden');
-            document.getElementById('panel-manage').classList.add('hidden');
-            document.getElementById('badge-admin').classList.add('hidden');
-            document.getElementById('invoice-display-card').classList.add('hidden');
-            
-            if (currentMatch) {
-                document.getElementById('user-actions').classList.remove('hidden');
-                document.getElementById('player-lists-container').classList.remove('hidden');
+    function switchMatch(id) {
+        selectedMatchId = id;
+        if (id && globalMatchesData[id]) {
+            currentMatch = globalMatchesData[id];
+            const regObj = currentMatch.registrations || {};
+            registrations = Object.keys(regObj).map(k => regObj[k]).sort((a, b) => a.timestamp - b.timestamp);
+        } else {
+            currentMatch = null;
+            registrations = [];
+        }
+        renderMatchPage();
+        updateLiveCalcPreview();
+    }
 
-                const thaiDate = new Date(currentMatch.date).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
-                document.getElementById('match-location').innerText = currentMatch.location;
-                document.getElementById('match-time').innerText = `${thaiDate} เวลา ${currentMatch.time} ถึง ${currentMatch.endTime} น.`;
-                document.getElementById('match-creator').innerText = currentMatch.creatorName;
-                document.getElementById('match-slots').innerText = `จำกัดจำนวนตัวจริง ${currentMatch.maxPlayers} ท่าน`;
+    // ========== RENDER ==========
+    function renderMatchPage() {
+        const isAdmin = currentMatch && userId === currentMatch.creatorId;
+        const isLocked = currentMatch?.isLocked || false;
+        const isBilling = currentMatch?.status === 'billing';
 
-                const statusTag = document.getElementById('match-status-tag');
-                if (currentMatch.status === 'billing') {
-                    statusTag.innerText = "💰 เรียกเก็บเงินค่าใช้จ่าย";
-                    statusTag.className = "text-xs bg-amber-100 text-amber-700 px-2.5 py-0.5 rounded-full font-medium";
-                    
-                    document.getElementById('invoice-text-details').innerText = currentMatch.billingSummary || '';
-                    document.getElementById('invoice-display-card').classList.remove('hidden');
-                } else {
-                    statusTag.innerText = "🏸 กำลังเปิดรับสมัครคิว";
-                    statusTag.className = "text-xs bg-green-100 text-green-700 px-2.5 py-0.5 rounded-full font-medium";
-                }
+        // Reset
+        document.getElementById('badge-admin').classList.add('hidden');
+        document.getElementById('invoice-display-card').classList.add('hidden');
+        document.getElementById('locked-banner').classList.add('hidden');
+        document.getElementById('panel-create').classList.add('hidden');
+        document.getElementById('panel-manage').classList.add('hidden');
+        document.getElementById('debt-tracker-section').classList.add('hidden');
 
-                // 🌟 [จุดแก้ไขหลัก] ตรวจสอบสิทธิ์ว่า User คนนี้เป็นเจ้าของตี้ที่ "กำลังเลือกดูอยู่ปัจจุบัน" หรือไม่แยกขาดรายแมตช์
-                if (userId === currentMatch.creatorId) {
-                    document.getElementById('badge-admin').classList.remove('hidden');
-                    document.getElementById('panel-manage').classList.remove('hidden');
-                }
-                updatePlayerLists();
+        // Admin panel area
+        document.getElementById('admin-panel').classList.remove('hidden');
+        if (isAdmin) {
+            document.getElementById('badge-admin').classList.remove('hidden');
+            document.getElementById('panel-manage').classList.remove('hidden');
+        }
+        // Always show create panel (for creating new match)
+        document.getElementById('panel-create').classList.remove('hidden');
+
+        if (currentMatch) {
+            document.getElementById('user-actions').style.display = 'flex';
+            document.getElementById('user-actions').classList.remove('hidden');
+            document.getElementById('player-lists-container').classList.remove('hidden');
+
+            const thaiDate = new Date(currentMatch.date + 'T00:00:00').toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' });
+            document.getElementById('match-location').innerText = currentMatch.location;
+            document.getElementById('match-date').innerText = thaiDate;
+            document.getElementById('match-time').innerText = `${currentMatch.time} - ${currentMatch.endTime} น.`;
+            document.getElementById('match-creator').innerText = currentMatch.creatorName;
+
+            // Status badge
+            const statusTag = document.getElementById('match-status-tag');
+            if (isBilling) {
+                statusTag.innerText = '💰 เรียกเก็บเงิน';
+                statusTag.className = 'badge badge-billing';
+            } else if (isLocked) {
+                statusTag.innerText = '🔒 ล็อคแล้ว';
+                statusTag.className = 'badge badge-locked';
+                document.getElementById('locked-banner').classList.remove('hidden');
             } else {
-                document.getElementById('match-location').innerText = "ยังไม่มีตี้ใดๆ ในระบบ เลือกสร้างได้ด้านบนครับ";
-                document.getElementById('match-time').innerText = "-";
-                document.getElementById('match-creator').innerText = "-";
-                document.getElementById('match-slots').innerText = "-";
-                document.getElementById('user-actions').classList.add('hidden');
-                document.getElementById('player-lists-container').classList.add('hidden');
+                statusTag.innerText = '🏸 เปิดรับคน';
+                statusTag.className = 'badge badge-open';
             }
+
+            // Join/Leave buttons
+            const alreadyJoined = registrations.some(p => p.id === userId);
+            const btnJoin = document.getElementById('btn-join');
+            const btnLeave = document.getElementById('btn-leave');
+            btnJoin.disabled = alreadyJoined || isBilling;
+            btnLeave.disabled = isLocked || isBilling;
+            btnJoin.innerText = alreadyJoined ? '✅ ลงชื่อแล้ว' : '🙋‍♂️ ลงชื่อเข้าตี้';
+            if (isLocked || isBilling) {
+                btnLeave.title = 'ล็อคแล้ว ไม่สามารถถอนตัวได้';
+            }
+
+            // Billing invoice (for members)
+            if (isBilling) {
+                document.getElementById('invoice-text-details').innerText = currentMatch.billingSummary || '';
+                document.getElementById('invoice-display-card').classList.remove('hidden');
+                document.getElementById('debt-tracker-section').classList.remove('hidden');
+            }
+
+            updatePlayerLists();
+            updateDebtTracker();
+        } else {
+            document.getElementById('match-location').innerText = 'เลือกตี้ด้านบน หรือสร้างใหม่';
+            document.getElementById('match-date').innerText = '-';
+            document.getElementById('match-time').innerText = '-';
+            document.getElementById('match-creator').innerText = '-';
+            document.getElementById('user-actions').classList.add('hidden');
+            document.getElementById('player-lists-container').classList.add('hidden');
         }
+    }
 
-        function updatePlayerLists() {
-            const listReal = document.getElementById('list-real');
-            const listWaiting = document.getElementById('list-waiting');
-            listReal.innerHTML = '';
-            listWaiting.innerHTML = '';
+    // ========== PLAYER LISTS ==========
+    function updatePlayerLists() {
+        const max = parseInt(currentMatch.maxPlayers);
+        const realPlayers = registrations.slice(0, max);
+        const waitingPlayers = registrations.slice(max);
+        const isBilling = currentMatch.status === 'billing';
+        const isAdmin = userId === currentMatch.creatorId;
 
-            const max = parseInt(currentMatch.maxPlayers);
-            const realPlayers = registrations.slice(0, max);
-            const waitingPlayers = registrations.slice(max);
+        // Stats bar
+        document.getElementById('stat-real').innerText = realPlayers.length;
+        document.getElementById('stat-max').innerText = max;
+        document.getElementById('stat-waiting').innerText = waitingPlayers.length;
 
-            document.getElementById('count-real').innerText = `${realPlayers.length} / ${max} คน`;
-            document.getElementById('count-waiting').innerText = `${waitingPlayers.length} คน`;
+        document.getElementById('count-real').innerText = `${realPlayers.length}/${max} คน`;
+        document.getElementById('count-waiting').innerText = `${waitingPlayers.length} คน`;
 
-            if (realPlayers.length === 0) {
-                listReal.innerHTML = `<p class="text-slate-400 text-center py-2">ยังไม่มีรายชื่อสมาชิกลงชื่อเข้าคิวประจำคู่</p>`;
-            } else {
-                realPlayers.forEach((p, idx) => {
-                    let paymentStatusText = `<span class="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">รอปิดแมตช์</span>`;
-                    
-                    if (currentMatch.status === 'billing') {
-                        if (p.isPaid) {
-                            paymentStatusText = `<span class="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold">✅ ชำระเงินแล้ว</span>`;
-                        } else if (p.paymentSlipBase64) {
-                            paymentStatusText = `
-                                <div class="flex items-center gap-1.5">
-                                    <button onclick="viewSlipFrame('${p.paymentSlipBase64}')" class="text-xs text-blue-600 underline font-medium">🖼️ ส่องสลิป</button>
-                                    ${userId === currentMatch.creatorId ? `<button onclick="approveUserPayment('${p.id}')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-0.5 text-[11px] rounded font-bold transition-colors">ยืนยันรับเงิน</button>` : `<span class="text-xs text-amber-600 font-medium">(รอตรวจ)</span>`}
-                                </div>`;
-                        } else {
-                            paymentStatusText = `<span class="text-xs bg-rose-100 text-rose-600 px-2 py-0.5 rounded-full font-medium">🔴 ค้างชำระเงิน</span>`;
-                        }
+        // Real list
+        const listReal = document.getElementById('list-real');
+        if (realPlayers.length === 0) {
+            listReal.innerHTML = `<p style="color:#94a3b8; text-align:center; padding:16px 0; font-size:13px;">ยังไม่มีสมาชิกลงชื่อ</p>`;
+        } else {
+            listReal.innerHTML = realPlayers.map((p, i) => {
+                const initial = p.name?.charAt(0) || '?';
+                let payBadge = '';
+                if (isBilling) {
+                    if (p.isPaid) {
+                        payBadge = `<span style="background:#dcfce7; color:#16a34a; font-size:11px; font-weight:700; padding:3px 8px; border-radius:999px;">✅ จ่ายแล้ว</span>`;
+                    } else if (p.paymentSlipBase64) {
+                        payBadge = `<div style="display:flex; gap:4px; align-items:center;">
+                            <button onclick="viewSlipFrame('${p.paymentSlipBase64}')" style="font-size:11px; color:#3b82f6; background:#eff6ff; border:none; padding:3px 8px; border-radius:8px; cursor:pointer; font-family:'Sarabun',sans-serif; font-weight:600;">🖼️ ดูสลิป</button>
+                            ${isAdmin ? `<button onclick="approveUserPayment('${p.id}')" style="font-size:11px; color:white; background:#16a34a; border:none; padding:3px 8px; border-radius:8px; cursor:pointer; font-family:'Sarabun',sans-serif; font-weight:700;">✓ รับเงิน</button>` : `<span style="font-size:11px; color:#f59e0b;">รอตรวจ</span>`}
+                        </div>`;
+                    } else {
+                        payBadge = `<span style="background:#ffe4e6; color:#e11d48; font-size:11px; font-weight:700; padding:3px 8px; border-radius:999px;">💸 ค้างชำระ</span>`;
                     }
+                }
+                return `<div class="player-row">
+                    <div class="player-avatar">${initial}</div>
+                    <span style="flex:1; font-size:14px; font-weight:600; color:#1e293b;">${i + 1}. ${p.name}</span>
+                    ${payBadge}
+                </div>`;
+            }).join('');
+        }
 
-                    listReal.innerHTML += `
-                        <div class="flex justify-between items-center py-2 border-b border-slate-100">
-                            <span class="font-medium text-slate-700">${idx+1}. ${p.name}</span>
-                            <div>${paymentStatusText}</div>
-                        </div>`;
-                });
-            }
+        // Waiting list
+        const listWaiting = document.getElementById('list-waiting');
+        if (waitingPlayers.length === 0) {
+            listWaiting.innerHTML = `<p style="color:#94a3b8; text-align:center; padding:12px 0; font-size:13px;">ไม่มีคิวสำรอง 🎉</p>`;
+        } else {
+            listWaiting.innerHTML = waitingPlayers.map((p, i) => `
+                <div class="player-row">
+                    <div class="player-avatar" style="background:linear-gradient(135deg,#fef3c7,#fde68a); color:#b45309;">${p.name?.charAt(0) || '?'}</div>
+                    <span style="flex:1; font-size:13px; color:#64748b;">${i + 1}. ${p.name}</span>
+                    <span style="font-size:11px; color:#d97706; background:#fffbeb; padding:3px 8px; border-radius:999px; font-weight:600;">สำรอง #${i + 1}</span>
+                </div>`).join('');
+        }
+    }
 
-            if (waitingPlayers.length === 0) {
-                listWaiting.innerHTML = `<p class="text-slate-400 text-center py-1 text-xs">ไม่มีรายการคิวสำรองตกค้าง</p>`;
+    // ========== DEBT TRACKER (Khun Thong Style) ==========
+    function updateDebtTracker() {
+        if (!currentMatch || currentMatch.status !== 'billing') return;
+
+        const max = parseInt(currentMatch.maxPlayers);
+        const realPlayers = registrations.slice(0, max);
+        const isAdmin = userId === currentMatch.creatorId;
+
+        const paid = realPlayers.filter(p => p.isPaid).length;
+        const pending = realPlayers.filter(p => !p.isPaid && p.paymentSlipBase64).length;
+        const unpaid = realPlayers.filter(p => !p.isPaid && !p.paymentSlipBase64).length;
+        const total = realPlayers.length;
+
+        // Progress
+        const pct = total > 0 ? Math.round((paid / total) * 100) : 0;
+        document.getElementById('pay-progress-bar').style.width = pct + '%';
+        document.getElementById('pay-progress-label').innerText = `จ่ายแล้ว ${paid}/${total} คน (${pct}%)`;
+
+        // Debt list
+        const container = document.getElementById('debt-tracker-list');
+        
+        // Summary chips
+        container.innerHTML = `
+            <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
+                <div style="flex:1; background:#f0fdf4; border:1.5px solid #bbf7d0; border-radius:12px; padding:8px 12px; text-align:center;">
+                    <p style="font-size:18px; font-weight:800; color:#16a34a; margin:0;">${paid}</p>
+                    <p style="font-size:10px; color:#64748b; margin:0;">จ่ายแล้ว</p>
+                </div>
+                <div style="flex:1; background:#fffbeb; border:1.5px solid #fde68a; border-radius:12px; padding:8px 12px; text-align:center;">
+                    <p style="font-size:18px; font-weight:800; color:#d97706; margin:0;">${pending}</p>
+                    <p style="font-size:10px; color:#64748b; margin:0;">รอตรวจ</p>
+                </div>
+                <div style="flex:1; background:#fff5f5; border:1.5px solid #fecdd3; border-radius:12px; padding:8px 12px; text-align:center;">
+                    <p style="font-size:18px; font-weight:800; color:#e11d48; margin:0;">${unpaid}</p>
+                    <p style="font-size:10px; color:#64748b; margin:0;">ยังไม่จ่าย</p>
+                </div>
+            </div>
+            <div id="debt-cards-list"></div>
+        `;
+
+        const debtList = document.getElementById('debt-cards-list');
+        
+        // Sort: unpaid → pending → paid
+        const sorted = [...realPlayers].sort((a, b) => {
+            const score = p => p.isPaid ? 2 : p.paymentSlipBase64 ? 1 : 0;
+            return score(a) - score(b);
+        });
+
+        debtList.innerHTML = sorted.map(p => {
+            let statusClass, icon, statusText, actions = '';
+            if (p.isPaid) {
+                statusClass = 'paid'; icon = '✅'; statusText = 'จ่ายแล้ว';
+            } else if (p.paymentSlipBase64) {
+                statusClass = 'pending'; icon = '⏳'; statusText = 'รอตรวจสลิป';
+                actions = `<button onclick="viewSlipFrame('${p.paymentSlipBase64}')" style="font-size:11px; color:#3b82f6; background:#eff6ff; border:none; padding:4px 10px; border-radius:8px; cursor:pointer; font-family:'Sarabun',sans-serif; font-weight:600; display:block; width:100%; margin-top:6px;">🖼️ ดูสลิปโอนเงิน</button>`;
+                if (isAdmin) {
+                    actions += `<button onclick="approveUserPayment('${p.id}')" style="font-size:11px; color:white; background:linear-gradient(135deg,#16a34a,#059669); border:none; padding:4px 10px; border-radius:8px; cursor:pointer; font-family:'Sarabun',sans-serif; font-weight:700; display:block; width:100%; margin-top:4px;">✓ ยืนยันรับเงิน</button>`;
+                }
             } else {
-                waitingPlayers.forEach((p, idx) => {
-                    listWaiting.innerHTML += `
-                        <div class="flex justify-between items-center py-1.5 border-b border-slate-50 text-slate-500">
-                            <span>${idx+1}. ${p.name}</span>
-                            <span class="text-xs text-amber-600 font-medium bg-amber-50 px-2 py-0.5 rounded-full">สำรองลำดับ ${idx+1}</span>
-                        </div>`;
-                });
+                statusClass = 'unpaid'; icon = '🔴'; statusText = 'ยังไม่จ่าย';
+                if (p.id === userId) {
+                    actions = `<p style="font-size:11px; color:#e11d48; margin:4px 0 0 0; font-weight:600;">👆 กดแนบสลิปด้านบนได้เลยครับ!</p>`;
+                }
             }
+
+            return `<div class="debt-card ${statusClass}">
+                <div class="debt-icon ${statusClass}">${icon}</div>
+                <div style="flex:1; min-width:0;">
+                    <p style="font-size:14px; font-weight:700; color:#1e293b; margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${p.name}</p>
+                    <p style="font-size:12px; color:#64748b; margin:2px 0 0 0;">${statusText}</p>
+                    ${actions}
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    // ========== ACTIONS ==========
+    async function createNewMatch() {
+        const loc = document.getElementById('input-location').value.trim();
+        const dt = document.getElementById('input-date').value;
+        const tm = document.getElementById('input-time').value;
+        const endTm = document.getElementById('input-endtime').value;
+        const mx = document.getElementById('input-max').value;
+
+        if (!loc || !dt || !tm || !endTm) {
+            alert('🚨 กรุณากรอกข้อมูลให้ครบก่อนนะครับ!');
+            return;
         }
 
-        async function createNewMatch() {
-            const loc = document.getElementById('input-location').value.trim();
-            const dt = document.getElementById('input-date').value; 
-            const tm = document.getElementById('input-time').value; 
-            const endTm = document.getElementById('input-endtime').value; 
-            const mx = document.getElementById('input-max').value;
+        const newMatchKey = db.ref().child('matches').push().key;
+        const matchData = {
+            id: newMatchKey, status: 'active', location: loc,
+            date: dt, time: tm, endTime: endTm, maxPlayers: mx,
+            creatorId: userId, creatorName: displayName,
+            notified2Hr: false, notified1Hr: false, isLocked: false
+        };
 
-            if (!loc || !dt || !tm || !endTm) {
-                alert('🚨 กรุณาระบุข้อมูลสถานที่ วันที่ และช่วงเวลาเริ่ม-เวลาจบ ให้ครบถ้วนด้วยนะครับ!');
-                return;
-            }
+        await db.ref('matches/' + newMatchKey).set(matchData);
+        await db.ref(`matches/${newMatchKey}/registrations/${userId}`).set({
+            id: userId, name: displayName, timestamp: Date.now()
+        });
 
-            const newMatchKey = db.ref().child('matches').push().key;
+        selectedMatchId = newMatchKey;
 
-            const matchData = {
-                id: newMatchKey,
-                status: 'active',
-                location: loc,
-                date: dt,
-                time: tm,
-                endTime: endTm,
-                maxPlayers: mx,
-                creatorId: userId,
-                creatorName: displayName,
-                notified2Hr: false
-            };
-
-            await db.ref('matches/' + newMatchKey).set(matchData);
-            await db.ref(`matches/${newMatchKey}/registrations/${userId}`).set({
-                id: userId, name: displayName, timestamp: Date.now()
+        try {
+            await fetch(`${CLOUD_BASE}/apiNotifyMatchCreated`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ data: matchData })
             });
+        } catch(e) { console.error(e); }
 
-            selectedMatchId = newMatchKey;
+        alert('✨ เปิดตี้และแจ้งกลุ่มไลน์เรียบร้อยแล้วครับ!');
+    }
 
-            try {
-                await fetch('https://us-central1-bokbak-badminton.cloudfunctions.net/apiNotifyMatchCreated', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ data: matchData })
-                });
-            } catch (e) { 
-                console.error("การแจ้งบอทสร้างแมตช์ทำงานล้มเหลว:", e); 
-            }
+    async function deleteMatch() {
+        if (!currentMatch) return;
+        if (!confirm('⚠️ ยืนยันยกเลิกตี้นี้? ระบบจะแจ้งกลุ่มไลน์ทันที')) return;
 
-            alert(`✨ บันทึกการสร้างตี้แบดสำเร็จและยิงแจ้งไลน์เรียบร้อยครับ!`);
-        }
+        const cacheMatch = { ...currentMatch };
+        await db.ref('matches/' + selectedMatchId).remove();
 
-        async function deleteMatch() {
-            if (!currentMatch) return;
-            if (!confirm('🚨 แจ้งเตือนความปลอดภัย: คุณต้องการที่จะกดลบและยุบตี้แบดมินตันนี้ทิ้งใช่ไหม? ระบบจะยิงข้อความแจ้งเตือนยกเลิกกิจกรรมเข้ากลุ่มไลน์ทันที!')) return;
-            
-            const cacheMatch = { ...currentMatch };
-            await db.ref('matches/' + selectedMatchId).remove();
-            
-            try {
-                await fetch('https://us-central1-bokbak-badminton.cloudfunctions.net/apiNotifyMatchDeleted', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ data: cacheMatch })
-                });
-            } catch(e){ 
-                console.error("API แจ้งเตือนลบข้อมูลพัง:", e); 
-            }
-            
-            selectedMatchId = '';
-            alert('🗑️ ดำเนินการยกเลิกแมตช์และเตือนกลุ่มสมาชิกร่วมรับทราบแล้วครับ');
-        }
-
-        async function joinMatch() {
-            if (!selectedMatchId || !userId) return;
-            if (registrations.some(p => p.id === userId)) {
-                alert('คุณลงชื่อรายชื่อในตี้ประจำนัดคู่นี้ไปแล้วน้า 🐶');
-                return;
-            }
-            await db.ref(`matches/${selectedMatchId}/registrations/${userId}`).set({
-                id: userId, name: displayName, timestamp: Date.now()
+        try {
+            await fetch(`${CLOUD_BASE}/apiNotifyMatchDeleted`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ data: cacheMatch })
             });
-            alert('ลงชื่อต่อคิวสำเร็จแล้วครับ! 🏸');
-        }
+        } catch(e) { console.error(e); }
 
-        async function leaveMatch() {
-            if (!selectedMatchId || !userId) return;
-            await db.ref(`matches/${selectedMatchId}/registrations/${userId}`).remove();
-            alert('ลบรายชื่ออกจากรายการคิวเรียบร้อยครับ');
-        }
+        selectedMatchId = '';
+        alert('🗑️ ยกเลิกตี้และแจ้งกลุ่มแล้วครับ');
+    }
 
-        function uploadPaymentSlip() {
-            const fileInput = document.getElementById('input-slip-file');
-            if (!fileInput.files || fileInput.files.length === 0) {
-                alert('กรุณาเลือกไฟล์ภาพสลิปใบโอนเงินของคุณก่อนกดส่งคิวตรวจน้า');
-                return;
-            }
-            const file = fileInput.files[0];
+    async function joinMatch() {
+        if (!selectedMatchId || !userId) return;
+        if (registrations.some(p => p.id === userId)) {
+            alert('คุณลงชื่อไว้แล้วครับ 🐾');
+            return;
+        }
+        await db.ref(`matches/${selectedMatchId}/registrations/${userId}`).set({
+            id: userId, name: displayName, timestamp: Date.now()
+        });
+        alert('✅ ลงชื่อเข้าตี้เรียบร้อยครับ! 🏸');
+    }
+
+    async function leaveMatch() {
+        if (!selectedMatchId || !userId) return;
+        if (currentMatch?.isLocked) {
+            alert('🔒 ระบบล็อครายชื่อแล้ว ไม่สามารถถอนตัวได้ครับ\n(เหลือน้อยกว่า 1 ชั่วโมงก่อนเล่น)');
+            return;
+        }
+        if (!confirm('ยืนยันถอนตัวจากตี้นี้?')) return;
+        await db.ref(`matches/${selectedMatchId}/registrations/${userId}`).remove();
+        alert('ถอนตัวจากตี้แล้วครับ');
+    }
+
+    function previewSlip(input) {
+        const preview = document.getElementById('slip-preview');
+        if (input.files && input.files[0]) {
             const reader = new FileReader();
-            reader.onloadend = async function() {
-                const base64String = reader.result;
-                await db.ref(`matches/${selectedMatchId}/registrations/${userId}/paymentSlipBase64`).set(base64String);
-                alert('📤 อัปโหลดภาพสลิปหลักฐานสำเร็จ! ส่งข้อมูลไปยังหัวหน้าตี้เพื่อรอตรวจเช็กความถูกต้องแล้วครับ');
+            reader.onloadend = () => {
+                preview.src = reader.result;
+                preview.style.display = 'block';
             };
-            reader.readAsDataURL(file);
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    function uploadPaymentSlip() {
+        const fileInput = document.getElementById('input-slip-file');
+        if (!fileInput.files || fileInput.files.length === 0) {
+            alert('กรุณาเลือกไฟล์สลิปก่อนครับ');
+            return;
+        }
+        const reader = new FileReader();
+        reader.onloadend = async function() {
+            await db.ref(`matches/${selectedMatchId}/registrations/${userId}/paymentSlipBase64`).set(reader.result);
+            alert('📤 ส่งสลิปสำเร็จ! หัวตี้จะตรวจสอบให้เร็วๆ นี้ครับ');
+        };
+        reader.readAsDataURL(fileInput.files[0]);
+    }
+
+    async function approveUserPayment(uId) {
+        await db.ref(`matches/${selectedMatchId}/registrations/${uId}/isPaid`).set(true);
+        alert('✅ ยืนยันการชำระเงินเรียบร้อยครับ');
+    }
+
+    function viewSlipFrame(base64Src) {
+        document.getElementById('modal-img-frame').src = base64Src;
+        document.getElementById('image-modal').classList.remove('hidden');
+    }
+
+    async function triggerBillingSubmit() {
+        const rate = parseFloat(document.getElementById('bill-court-rate').value) || 0;
+        const hrs = parseFloat(document.getElementById('bill-hours').value) || 0;
+        const courts = parseFloat(document.getElementById('bill-court-count').value) || 0;
+        const balls = parseFloat(document.getElementById('bill-shuttlecock').value) || 0;
+        const bank = document.getElementById('bill-bank').value.trim();
+
+        if (!bank) {
+            alert('⚠️ กรุณากรอกเลขบัญชีรับเงินด้วยครับ');
+            return;
         }
 
-        async function approveUserPayment(uId) {
-            await db.ref(`matches/${selectedMatchId}/registrations/${uId}/isPaid`).set(true);
-            alert('ยืนยันประวัติการชำระเงินของสมาชิกรายดังกล่าวเรียบร้อย');
-        }
+        const calculatedTotal = (rate * hrs * courts) + balls;
+        const customFinal = parseFloat(document.getElementById('bill-final-custom').value);
+        const finalTotal = !isNaN(customFinal) ? customFinal : calculatedTotal;
+        const totalPeople = registrations.slice(0, parseInt(currentMatch.maxPlayers)).length || 1;
+        const perHead = (finalTotal / totalPeople).toFixed(2);
 
-        function viewSlipFrame(base64Src) {
-            document.getElementById('modal-img-frame').src = base64Src;
-            document.getElementById('image-modal').classList.remove('hidden');
-        }
+        const summaryStr = `🏟️ สนาม: ${currentMatch.location}\n⏰ เวลา: ${currentMatch.time} - ${currentMatch.endTime} น.\n\n💵 ค่าคอร์ด + ลูกแบด: ${finalTotal} บาท\n👥 หาร ${totalPeople} คน\n🎯 คนละ: ${perHead} บาท`;
 
-        async function triggerBillingSubmit() {
-            const rate = parseFloat(document.getElementById('bill-court-rate').value) || 0;
-            const hrs = parseFloat(document.getElementById('bill-hours').value) || 0;
-            const courts = parseFloat(document.getElementById('bill-court-count').value) || 0;
-            const balls = parseFloat(document.getElementById('bill-shuttlecock').value) || 0;
-            const bank = document.getElementById('bill-bank').value.trim();
+        await db.ref(`matches/${selectedMatchId}/status`).set('billing');
+        await db.ref(`matches/${selectedMatchId}/billingSummary`).set(summaryStr);
 
-            const calculatedTotal = (rate * hrs * courts) + balls;
-            const customFinal = parseFloat(document.getElementById('bill-final-custom').value);
-            const finalTotal = !isNaN(customFinal) ? customFinal : calculatedTotal;
+        try {
+            await fetch(`${CLOUD_BASE}/apiNotifyBilling`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ data: { matchId: selectedMatchId, summaryText: summaryStr, bankInfo: bank } })
+            });
+            alert('📢 ส่งบิลเข้ากลุ่ม LINE แล้วครับ!');
+        } catch(e) { console.error(e); }
+    }
 
-            const totalPeople = registrations.length || 1;
-            const perHead = (finalTotal / totalPeople).toFixed(2);
+    function setupLiveBillingCalculators() {
+        ['bill-court-rate', 'bill-hours', 'bill-court-count', 'bill-shuttlecock', 'bill-final-custom'].forEach(id => {
+            document.getElementById(id)?.addEventListener('input', updateLiveCalcPreview);
+        });
+    }
 
-            if(!bank) {
-                alert('⚠️ กรุณากรอกระบุเลขที่บัญชีรับเงินโอนเงินคืนของหัวตี้ด้วยนะครับ');
-                return;
-            }
+    function updateLiveCalcPreview() {
+        if (!currentMatch) return;
+        const rate = parseFloat(document.getElementById('bill-court-rate').value) || 0;
+        const hrs = parseFloat(document.getElementById('bill-hours').value) || 0;
+        const courts = parseFloat(document.getElementById('bill-court-count').value) || 0;
+        const balls = parseFloat(document.getElementById('bill-shuttlecock').value) || 0;
+        const calculatedTotal = (rate * hrs * courts) + balls;
+        document.getElementById('calc-preview-total').innerText = calculatedTotal;
 
-            const summaryStr = `🏟️ สนาม: ${currentMatch.location}\n⏰ เวลาตี: ${currentMatch.time} - ${currentMatch.endTime} น.\n📊 ยอดสุทธิค่าคอร์ด + ค่าลูกแบด: ${finalTotal} บาท\n👥 หารจำนวนคนร่วมชะตากรรม: ${totalPeople} คน\n💵 ตกหารเฉลี่ยคนละ: ${perHead} บาท`;
+        const max = parseInt(currentMatch?.maxPlayers || 1);
+        const realCount = registrations.slice(0, max).length || 1;
+        const customFinal = parseFloat(document.getElementById('bill-final-custom').value);
+        const finalTotal = !isNaN(customFinal) ? customFinal : calculatedTotal;
+        document.getElementById('calc-preview-split').innerText = (finalTotal / realCount).toFixed(2);
+    }
 
-            await db.ref(`matches/${selectedMatchId}/status`).set('billing');
-            await db.ref(`matches/${selectedMatchId}/billingSummary`).set(summaryStr);
-
-            try {
-                await fetch('https://us-central1-bokbak-badminton.cloudfunctions.net/apiNotifyBilling', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ data: { matchId: selectedMatchId, summaryText: summaryStr, bankInfo: bank } })
-                });
-                alert('📢 ประกาศใบแจ้งบิลเก็บเงิน และอัปเดตสถานะเข้าไลน์กลุ่มพรรคพวกเรียบร้อย!');
-            } catch(e) { 
-                console.error("เรียกเก็บเงินล้มเหลว:", e); 
-            }
-        }
-
-        setupLiveBillingCalculators();
-        initLiff();
-    </script>
+    setupLiveBillingCalculators();
+    initLiff();
+</script>
 </body>
 </html>
