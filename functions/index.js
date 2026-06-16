@@ -11,27 +11,58 @@ admin.initializeApp({
 const db = admin.database();
 
 const LINE_ACCESS_TOKEN = "fgXW8VjBTGRcvHOHDMWH0edxxnb4YQ2OpIXvooT8IG3yfwvExyYyuYc/+dBwEqYS6poYGnaMCO6KoGVGjIGBonCGNorv/18cSqQJ2dgMm55EALWchtAaYNCcQV7JFEOrDdSXO2Auarc84XSuvFnu9AdB04t89/1O/w1cDnyilFU=";
-const LINE_GROUP_ID = "Ce835d108875b2dbf5265af2cf5a9367b"; 
+const LINE_GROUP_ID = "Ce835d108875b2dbf5265af2cf5a9367b";
 
-// Webhook เปล่าคงไว้ตามโครงสร้างเดิมของคุณ
+// ============================
+// 🔐 ตรวจสอบว่า userId เป็นสมาชิกกลุ่ม LINE หรือไม่
+// ============================
+async function isGroupMember(userId) {
+    try {
+        const response = await axios.get(
+            `https://api.line.me/v2/bot/group/${LINE_GROUP_ID}/member/${userId}`,
+            { headers: { "Authorization": `Bearer ${LINE_ACCESS_TOKEN}` } }
+        );
+        return response.status === 200;
+    } catch (error) {
+        // 404 = ไม่ใช่สมาชิกกลุ่ม
+        return false;
+    }
+}
+
+// Webhook เปล่าคงไว้ตามโครงสร้างเดิม
 exports.webhook = functions.https.onRequest((req, res) => {
     res.sendStatus(200);
 });
 
+// ============================
+// 🔐 API ตรวจสอบสมาชิกกลุ่ม (เรียกจาก LIFF)
+// ============================
+exports.apiCheckGroupMember = functions.https.onRequest(async (req, res) => {
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.set('Access-Control-Allow-Headers', 'Content-Type');
+
+    if (req.method === 'OPTIONS') return res.status(204).send('');
+
+    const { userId } = req.body.data || {};
+    if (!userId) return res.status(400).send({ data: { isMember: false } });
+
+    const isMember = await isGroupMember(userId);
+    return res.status(200).send({ data: { isMember } });
+});
+
+// ============================
 // 🚀 1. API แจ้งเตือนเมื่อมีการสร้างตี้ใหม่
+// ============================
 exports.apiNotifyMatchCreated = functions.https.onRequest(async (req, res) => {
     res.set('Access-Control-Allow-Origin', '*');
     res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.set('Access-Control-Allow-Headers', 'Content-Type');
 
-    if (req.method === 'OPTIONS') {
-        return res.status(204).send('');
-    }
+    if (req.method === 'OPTIONS') return res.status(204).send('');
 
     const matchData = req.body.data;
-    if (!matchData || !matchData.id) {
-        return res.status(400).send("ไม่พบข้อมูลแชร์แมตช์");
-    }
+    if (!matchData || !matchData.id) return res.status(400).send("ไม่พบข้อมูลแมตช์");
 
     const thaiDate = new Date(matchData.date).toLocaleDateString('th-TH', { day: 'numeric', month: 'long' });
 
@@ -99,67 +130,65 @@ exports.apiNotifyMatchCreated = functions.https.onRequest(async (req, res) => {
     }
 });
 
-// 🗑️ 2. API แจ้งเตือนเมื่อหัวตี้กดลบ/ยกเลิกตี้
+// ============================
+// 🗑️ 2. API แจ้งเตือนเมื่อยกเลิกตี้
+// ============================
 exports.apiNotifyMatchDeleted = functions.https.onRequest(async (req, res) => {
     res.set('Access-Control-Allow-Origin', '*');
     res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.set('Access-Control-Allow-Headers', 'Content-Type');
 
-    if (req.method === 'OPTIONS') {
-        return res.status(204).send('');
-    }
+    if (req.method === 'OPTIONS') return res.status(204).send('');
 
     const matchData = req.body.data;
-    if (!matchData) {
-        return res.status(400).send("ไม่มีข้อมูล");
-    }
+    if (!matchData) return res.status(400).send("ไม่มีข้อมูล");
 
     const thaiDate = new Date(matchData.date).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
-    const textMsg = `🗑️ [ประกาศยกเลิกตี้แบดมินตัน]\n📌 สนาม: ${matchData.location}\n📅 วันที่: ${thaiDate}\n⏰ เวลา: ${matchData.time} - ${matchData.endTime} น.\n\nตี้ดังกล่าวได้ถูกยุบหรือยกเลิกเรียบร้อยแล้วโดยหัวหน้าตี้ครับ 🙏`;
+    const textMsg = `🗑️ [ประกาศยกเลิกตี้แบดมินตัน]\n📌 สนาม: ${matchData.location}\n📅 วันที่: ${thaiDate}\n⏰ เวลา: ${matchData.time} - ${matchData.endTime} น.\n\nตี้ดังกล่าวถูกยกเลิกโดยหัวหน้าตี้แล้วครับ 🙏`;
 
     try {
         await axios.post("https://api.line.me/v2/bot/message/push", {
             to: LINE_GROUP_ID,
             messages: [{ type: "text", text: textMsg }]
         }, { headers: { "Content-Type": "application/json", "Authorization": `Bearer ${LINE_ACCESS_TOKEN}` } });
-        return res.status(200).send({ data: { success: true, message: "แจ้งยกเลิกตี้สำเร็จ" } });
-    } catch (error) { 
+        return res.status(200).send({ data: { success: true } });
+    } catch (error) {
         console.error(error);
         return res.status(500).send({ data: { error: error.message } });
     }
 });
 
-// 💰 3. API แจ้งเตือนเรียกเก็บเงินแชร์ค่าคอร์ด
+// ============================
+// 💰 3. API แจ้งเตือนเรียกเก็บเงิน
+// ============================
 exports.apiNotifyBilling = functions.https.onRequest(async (req, res) => {
     res.set('Access-Control-Allow-Origin', '*');
     res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.set('Access-Control-Allow-Headers', 'Content-Type');
 
-    if (req.method === 'OPTIONS') {
-        return res.status(204).send('');
-    }
+    if (req.method === 'OPTIONS') return res.status(204).send('');
 
     const dataObj = req.body.data;
-    if (!dataObj) {
-        return res.status(400).send("ไม่มีข้อมูลเรียกเก็บเงิน");
-    }
+    if (!dataObj) return res.status(400).send("ไม่มีข้อมูล");
 
     const { matchId, summaryText, bankInfo } = dataObj;
-    const textMsg = `💰 [เรียกเก็บค่าตีแบดมินตันมาแล้วจ้า!]\n\n${summaryText}\n\n🏦 ช่องทางชำระเงินของหัวตี้:\n${bankInfo}\n\n👉 คลิกเพื่อเข้าไปแนบหลักฐานสลิปเงินคืนหัวตี้ได้ที่นี่เลย:\nhttps://liff.line.me/2010400559-X4eBS5zg?matchId=${matchId}`;
+    const textMsg = `💰 [เรียกเก็บค่าตีแบดมินตันมาแล้วจ้า!]\n\n${summaryText}\n\n🏦 ช่องทางชำระเงิน:\n${bankInfo}\n\n👉 กดแนบสลิปได้ที่นี่:\nhttps://liff.line.me/2010400559-X4eBS5zg?matchId=${matchId}`;
 
     try {
         await axios.post("https://api.line.me/v2/bot/message/push", {
             to: LINE_GROUP_ID,
             messages: [{ type: "text", text: textMsg }]
         }, { headers: { "Content-Type": "application/json", "Authorization": `Bearer ${LINE_ACCESS_TOKEN}` } });
-        return res.status(200).send({ data: { success: true, message: "ส่งบิลเข้ากลุ่มสำเร็จ" } });
-    } catch (error) { 
+        return res.status(200).send({ data: { success: true } });
+    } catch (error) {
         console.error(error);
         return res.status(500).send({ data: { error: error.message } });
     }
 });
 
-// ⏰ 4. ระบบเช็กยอดแจ้งเตือนอัตโนมัติล่วงหน้า 2 ชั่วโมง (v2 Cloud Scheduler)
+// ============================
+// ⏰ 4. Scheduler: แจ้งเตือนก่อนตี้ 2 ชั่วโมง
+// ============================
 exports.check2HourReminder = onSchedule("every 15 minutes", async (event) => {
     const snapshot = await db.ref("matches").get();
     const matches = snapshot.val() || {};
@@ -171,18 +200,18 @@ exports.check2HourReminder = onSchedule("every 15 minutes", async (event) => {
 
         const matchDateTime = new Date(`${match.date}T${match.time}:00`);
         const timeDiffMs = matchDateTime - now;
-        const twoHoursInMs = 2 * 60 * 60 * 1000;
+        const twoHoursMs = 2 * 60 * 60 * 1000;
 
-        if (timeDiffMs > 0 && timeDiffMs <= twoHoursInMs) {
+        if (timeDiffMs > 0 && timeDiffMs <= twoHoursMs) {
             const regData = match.registrations || {};
-            const players = Object.keys(regData).map(k => regData[k]).sort((a,b) => a.timestamp - b.timestamp);
+            const players = Object.keys(regData).map(k => regData[k]).sort((a, b) => a.timestamp - b.timestamp);
             const realPlayers = players.slice(0, parseInt(match.maxPlayers));
 
-            let playerNamesText = "";
-            realPlayers.forEach((p, idx) => { playerNamesText += `${idx + 1}. ${p.name}\n`; });
-            if (realPlayers.length === 0) playerNamesText = "ยังไม่มีสมาชิกลงชื่อตัวจริง";
+            let playerNamesText = realPlayers.length > 0
+                ? realPlayers.map((p, i) => `${i + 1}. ${p.name}`).join("\n")
+                : "ยังไม่มีสมาชิกลงชื่อตัวจริง";
 
-            const reminderText = `📢 [ประกาศแจ้งเตือนตี้แบดอีก 2 ชั่วโมง!]\nสนาม: ${match.location}\nเวลา: ${match.time} - ${match.endTime} น.\n\n🔥 สรุปรายชื่อตัวจริงยื่นยันสิทธิ์:\n${playerNamesText}\n⚠️ สมาชิกท่านใดติดธุระ รบกวนกด 'ยกเลิกคิว' ออกจากตี้ผ่านแอปด้วยครับ! 🐾`;
+            const reminderText = `📢 [แจ้งเตือน! เหลืออีก 2 ชั่วโมงก็จะถึงเวลาตี้แบดแล้ว!]\n\n📍 สนาม: ${match.location}\n⏰ เวลา: ${match.time} - ${match.endTime} น.\n\n🔥 รายชื่อตัวจริง (${realPlayers.length} คน):\n${playerNamesText}\n\n⚠️ หลังจากนี้อีก 1 ชั่วโมง ระบบจะล็อครายชื่อ ไม่สามารถยกเลิกได้แล้ว!\n(ถ้าจะถอนตัวรีบทำตอนนี้เลยนะครับ) 🐾`;
 
             try {
                 await axios.post("https://api.line.me/v2/bot/message/push", {
@@ -191,8 +220,59 @@ exports.check2HourReminder = onSchedule("every 15 minutes", async (event) => {
                 }, { headers: { "Content-Type": "application/json", "Authorization": `Bearer ${LINE_ACCESS_TOKEN}` } });
 
                 await db.ref(`matches/${key}/notified2Hr`).set(true);
-            } catch (error) { 
-                console.error("ระบบแจ้งเตือนผิดพลาดที่ ID แมตช์:", key, error); 
+                console.log(`✅ ส่งแจ้งเตือน 2 ชม. สำเร็จ: Match ${key}`);
+            } catch (error) {
+                console.error("แจ้งเตือน 2 ชม. พัง Match:", key, error);
+            }
+        }
+    }
+});
+
+// ============================
+// ⏰ 5. Scheduler: แจ้งเตือนก่อนตี้ 1 ชั่วโมง + ล็อครายชื่อ
+// ============================
+exports.check1HourReminder = onSchedule("every 15 minutes", async (event) => {
+    const snapshot = await db.ref("matches").get();
+    const matches = snapshot.val() || {};
+    const now = new Date();
+
+    for (let key in matches) {
+        const match = matches[key];
+        if (match.status !== 'active' || match.notified1Hr) continue;
+
+        const matchDateTime = new Date(`${match.date}T${match.time}:00`);
+        const timeDiffMs = matchDateTime - now;
+        const oneHourMs = 60 * 60 * 1000;
+
+        if (timeDiffMs > 0 && timeDiffMs <= oneHourMs) {
+            const regData = match.registrations || {};
+            const players = Object.keys(regData).map(k => regData[k]).sort((a, b) => a.timestamp - b.timestamp);
+            const realPlayers = players.slice(0, parseInt(match.maxPlayers));
+            const waitingPlayers = players.slice(parseInt(match.maxPlayers));
+
+            // 🔒 ล็อครายชื่อ — ไม่ให้ยกเลิก/ถอนตัวแล้ว
+            await db.ref(`matches/${key}/isLocked`).set(true);
+
+            let realText = realPlayers.length > 0
+                ? realPlayers.map((p, i) => `${i + 1}. ${p.name}`).join("\n")
+                : "ยังไม่มีสมาชิก";
+
+            let waitingText = waitingPlayers.length > 0
+                ? `\n\n⏳ คิวสำรอง:\n${waitingPlayers.map((p, i) => `${i + 1}. ${p.name}`).join("\n")}`
+                : "";
+
+            const reminderText = `🔔 [สรุปรายชื่อ! เหลืออีก 1 ชั่วโมงก็จะถึงเวลาตี้แล้ว!]\n\n📍 สนาม: ${match.location}\n⏰ เวลา: ${match.time} - ${match.endTime} น.\n\n✅ รายชื่อตัวจริง (ล็อคแล้ว ${realPlayers.length} คน):\n${realText}${waitingText}\n\n🔒 ระบบล็อครายชื่อแล้ว ไม่สามารถยกเลิก/ถอนตัวได้อีกแล้วนะครับ!\nพบกันที่สนามครับ 🏸🐾`;
+
+            try {
+                await axios.post("https://api.line.me/v2/bot/message/push", {
+                    to: LINE_GROUP_ID,
+                    messages: [{ type: "text", text: reminderText }]
+                }, { headers: { "Content-Type": "application/json", "Authorization": `Bearer ${LINE_ACCESS_TOKEN}` } });
+
+                await db.ref(`matches/${key}/notified1Hr`).set(true);
+                console.log(`✅ ส่งแจ้งเตือน 1 ชม. + ล็อคแล้ว: Match ${key}`);
+            } catch (error) {
+                console.error("แจ้งเตือน 1 ชม. พัง Match:", key, error);
             }
         }
     }
