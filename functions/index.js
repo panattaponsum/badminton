@@ -12,6 +12,15 @@ const db = admin.database();
 
 const LINE_ACCESS_TOKEN = "fgXW8VjBTGRcvHOHDMWH0edxxnb4YQ2OpIXvooT8IG3yfwvExyYyuYc/+dBwEqYS6poYGnaMCO6KoGVGjIGBonCGNorv/18cSqQJ2dgMm55EALWchtAaYNCcQV7JFEOrDdSXO2Auarc84XSuvFnu9AdB04t89/1O/w1cDnyilFU=";
 const LINE_GROUP_ID = "Ce835d108875b2dbf5265af2cf5a9367b";
+const THAILAND_UTC_OFFSET = "+07:00";
+
+function getMatchDateTime(match) {
+    return new Date(`${match.date}T${match.time}:00${THAILAND_UTC_OFFSET}`);
+}
+
+function getTimeUntilMatchMs(match, now = new Date()) {
+    return getMatchDateTime(match).getTime() - now.getTime();
+}
 
 // ============================
 // 🔐 ตรวจสอบว่า userId เป็นสมาชิกกลุ่ม LINE หรือไม่
@@ -194,8 +203,7 @@ exports.check2HourReminder = onSchedule("every 15 minutes", async (event) => {
         const match = matches[key];
         if (match.status !== 'active' || match.notified2Hr) continue;
 
-        const matchDateTime = new Date(`${match.date}T${match.time}:00`);
-        const timeDiffMs = matchDateTime - now;
+        const timeDiffMs = getTimeUntilMatchMs(match, now);
         const twoHoursMs = 2 * 60 * 60 * 1000;
 
         if (timeDiffMs > 0 && timeDiffMs <= twoHoursMs) {
@@ -236,8 +244,7 @@ exports.check1HourReminder = onSchedule("every 15 minutes", async (event) => {
         const match = matches[key];
         if (match.status !== 'active' || match.notified1Hr) continue;
 
-        const matchDateTime = new Date(`${match.date}T${match.time}:00`);
-        const timeDiffMs = matchDateTime - now;
+        const timeDiffMs = getTimeUntilMatchMs(match, now);
         const oneHourMs = 60 * 60 * 1000;
 
         if (timeDiffMs > 0 && timeDiffMs <= oneHourMs) {
