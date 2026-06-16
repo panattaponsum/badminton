@@ -166,8 +166,9 @@ exports.apiNotifyBilling = functions.https.onRequest(async (req, res) => {
     const dataObj = req.body.data;
     if (!dataObj) return res.status(400).send("ไม่มีข้อมูล");
 
-    const { matchId, summaryText, bankInfo } = dataObj;
-    const textMsg = `💰 [เรียกเก็บค่าตีแบดมินตันมาแล้วจ้า!]\n\n${summaryText}\n\n🏦 ช่องทางชำระเงิน:\n${bankInfo}\n\n👉 กดแนบสลิปได้ที่นี่:\nhttps://liff.line.me/2010400559-X4eBS5zg?matchId=${matchId}`;
+    const { matchId, summaryText, bankInfo, paymentDate } = dataObj;
+    const paymentDateText = paymentDate ? `\n📅 วันที่รับโอนที่ระบบใช้ตรวจ: ${paymentDate}` : '';
+    const textMsg = `💰 [เรียกเก็บค่าตีแบดมินตันมาแล้วจ้า!]\n\n${summaryText}${paymentDateText}\n\n🏦 ช่องทางชำระเงิน:\n${bankInfo}\n\n🤖 แนบสลิปแล้วระบบตรวจยอด/วันที่ให้อัตโนมัติ\n👉 กดแนบสลิปได้ที่นี่:\nhttps://liff.line.me/2010400559-X4eBS5zg?matchId=${matchId}`;
 
     try {
         await axios.post("https://api.line.me/v2/bot/message/push", {
@@ -269,6 +270,74 @@ exports.check1HourReminder = onSchedule("every 15 minutes", async (event) => {
             } catch (error) {
                 console.error("แจ้งเตือน 1 ชม. พัง Match:", key, error);
             }
+        }
+    }
+});
+
+
+// ============================
+// 🤖 6. API แจ้งผลตรวจสลิปอัตโนมัติ
+// ============================
+exports.apiNotifySlipChecked = functions.https.onRequest(async (req, res) => {
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.set('Access-Control-Allow-Headers', 'Content-Type');
+
+    if (req.method === 'OPTIONS') return res.status(204).send('');
+
+    const dataObj = req.body.data;
+    if (!dataObj) return res.status(400).send("ไม่มีข้อมูล");
+
+    const { matchId, memberName, status, remark } = dataObj;
+    const isPaid = status === 'paid';
+    const textMsg = isPaid
+        ? `✅ [ชำระเงินแล้ว]
+${memberName} ชำระเงินเรียบร้อย ระบบตรวจยอดและวันที่ถูกต้องแล้วจ้า 🧾✨`
+        : `⚠️ [สลิปต้องตรวจสอบอีกที]
+${memberName} ส่งสลิปแล้ว แต่${remark || 'ยอด/วันที่ไม่ตรง'}
+รบกวนหัวตี้ตรวจสอบอีกครั้งนะครับ`;
+
+    try {
+        await axios.post("https://api.line.me/v2/bot/message/push", {
+            to: LINE_GROUP_ID,
+            messages: [{ type: "text", text: `${textMsg}\n\nเปิดหน้าตี้: https://liff.line.me/2010400559-X4eBS5zg?matchId=${matchId}` }]
+        }, { headers: { "Content-Type": "application/json", "Authorization": `Bearer ${LINE_ACCESS_TOKEN}` } });
+        return res.status(200).send({ data: { success: true } });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).send({ data: { error: error.message } });
+    }
+});
+
+// ============================
+// ⏰ 7. Scheduler: ตามคนยังไม่จ่ายทุก 6 ชั่วโมง
+// ============================
+exports.remindUnpaidEvery6Hours = onSchedule("every 6 hours", async (event) => {
+    const snapshot = await db.ref("matches").get();
+    const matches = snapshot.val() || {};
+
+    for (let key in matches) {
+        const match = matches[key];
+        if (match.status !== 'billing') continue;
+
+        const regData = match.registrations || {};
+        const players = Object.keys(regData).map(k => regData[k]).sort((a, b) => a.timestamp - b.timestamp);
+        const realPlayers = players.slice(0, parseInt(match.maxPlayers));
+        const unpaidPlayers = realPlayers.filter(p => !p.isPaid);
+        if (unpaidPlayers.length === 0) continue;
+
+        const unpaidText = unpaidPlayers.map((p, i) => `${i + 1}. ${p.name}${p.paymentStatus === 'rejected' ? ' (สลิปยอด/วันที่ไม่ตรง)' : ''}`).join("\n");
+        const reminderText = `⏰ [แจ้งเตือนชำระเงินทุก 6 ชม.]\n\nตี้: ${match.location} ${match.time}-${match.endTime} น.\nยอดคนละ: ${match.paymentPerHead || '-'} บาท\n\nยังรอชำระ/รอตรวจสอบ:\n${unpaidText}\n\nแนบสลิปได้ที่ https://liff.line.me/2010400559-X4eBS5zg?matchId=${key}`;
+
+        try {
+            await axios.post("https://api.line.me/v2/bot/message/push", {
+                to: LINE_GROUP_ID,
+                messages: [{ type: "text", text: reminderText }]
+            }, { headers: { "Content-Type": "application/json", "Authorization": `Bearer ${LINE_ACCESS_TOKEN}` } });
+            await db.ref(`matches/${key}/lastUnpaidReminderAt`).set(Date.now());
+            console.log(`✅ ส่งแจ้งเตือนค้างชำระ 6 ชม.: Match ${key}`);
+        } catch (error) {
+            console.error("แจ้งเตือนค้างชำระพัง Match:", key, error);
         }
     }
 });
