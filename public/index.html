@@ -755,10 +755,22 @@
         updateLiveCalcPreview();
     }
 
+    function getMatchStartDateTime(match) {
+        if (!match?.date || !match?.time) return null;
+        return new Date(`${match.date}T${match.time}:00+07:00`);
+    }
+
+    function isWithinLockWindow(match) {
+        const startAt = getMatchStartDateTime(match);
+        if (!startAt) return false;
+        const oneHourMs = 60 * 60 * 1000;
+        return startAt.getTime() - Date.now() <= oneHourMs;
+    }
+
     // ========== RENDER ==========
     function renderMatchPage() {
         const isAdmin = currentMatch && userId === currentMatch.creatorId;
-        const isLocked = currentMatch?.isLocked || false;
+        const isLocked = currentMatch?.isLocked || isWithinLockWindow(currentMatch) || false;
         const isBilling = currentMatch?.status === 'billing';
 
         // Reset
@@ -1048,7 +1060,7 @@
 
     async function leaveMatch() {
         if (!selectedMatchId || !userId) return;
-        if (currentMatch?.isLocked) {
+        if (currentMatch?.isLocked || isWithinLockWindow(currentMatch)) {
             alert('🔒 ระบบล็อครายชื่อแล้ว ไม่สามารถถอนตัวได้ครับ\n(เหลือน้อยกว่า 1 ชั่วโมงก่อนเล่น)');
             return;
         }
