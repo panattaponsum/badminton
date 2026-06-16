@@ -12,25 +12,25 @@
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --green: #16a34a;
-            --green-light: #dcfce7;
-            --green-mid: #22c55e;
-            --amber: #d97706;
-            --amber-light: #fef3c7;
-            --rose: #e11d48;
-            --rose-light: #ffe4e6;
-            --slate: #1e293b;
+            --green: #58c7a3;
+            --green-light: #e7fff5;
+            --green-mid: #86efc5;
+            --amber: #f2a65a;
+            --amber-light: #fff2cf;
+            --rose: #fb7185;
+            --rose-light: #ffe8ef;
+            --slate: #475569;
             --muted: #64748b;
-            --bg: #f0fdf4;
-            --card: #ffffff;
-            --border: #e2e8f0;
+            --bg: #fff7fb;
+            --card: rgba(255,255,255,0.92);
+            --border: #f8d7e8;
         }
         * { font-family: 'Sarabun', sans-serif; }
-        body { background: var(--bg); }
+        body { background: radial-gradient(circle at top left, #fff0f7 0, #fff7fb 34%, #effdf7 100%); color: var(--slate); }
 
         /* === HEADER === */
         .hero-header {
-            background: linear-gradient(135deg, #15803d 0%, #16a34a 50%, #059669 100%);
+            background: linear-gradient(135deg, #ffb7d5 0%, #a7f3d0 52%, #bfdbfe 100%);
             padding: 20px 16px 32px;
             position: relative;
             overflow: hidden;
@@ -60,12 +60,12 @@
             border-radius: 20px;
             border: 1px solid var(--border);
             padding: 18px;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+            box-shadow: 0 10px 28px rgba(244,114,182,0.12);
         }
         .card-dark {
-            background: linear-gradient(145deg, #1e293b, #0f172a);
+            background: linear-gradient(145deg, #6d5dfc, #6ee7b7);
             border-radius: 20px;
-            border: 1px solid #334155;
+            border: 1px solid rgba(255,255,255,0.35);
             padding: 18px;
         }
 
@@ -85,7 +85,7 @@
 
         /* === BUTTONS === */
         .btn-primary {
-            background: linear-gradient(135deg, #16a34a, #059669);
+            background: linear-gradient(135deg, #fb9fce, #86efac);
             color: white;
             border: none;
             border-radius: 14px;
@@ -123,7 +123,7 @@
             box-shadow: 0 3px 10px rgba(225,29,72,0.3);
         }
         .btn-join {
-            background: linear-gradient(135deg, #22c55e, #16a34a);
+            background: linear-gradient(135deg, #86efac, #67e8f9);
             color: white;
             border: none;
             border-radius: 14px;
@@ -203,7 +203,7 @@
 
         /* === SUMMARY BAR === */
         .summary-bar {
-            background: linear-gradient(135deg, #0f172a, #1e293b);
+            background: linear-gradient(135deg, #a78bfa, #f9a8d4);
             border-radius: 16px;
             padding: 14px 18px;
             display: flex;
@@ -477,13 +477,18 @@
                     <pre id="invoice-text-details" style="font-size:12px; color:#fef3c7; white-space:pre-wrap; margin:8px 0; background:rgba(0,0,0,0.15); border-radius:10px; padding:10px; line-height:1.6;"></pre>
                     <div style="background:white; border-radius:14px; padding:14px; margin-top:10px;">
                         <p style="font-size:12px; font-weight:700; color:#92400e; margin:0 0 8px 0;">📎 แนบสลิปโอนเงิน</p>
-                        <input type="file" id="input-slip-file" accept="image/*" 
+                        <input type="file" id="input-slip-file" accept="image/*"
                             style="width:100%; font-size:12px; color:#64748b; margin-bottom:8px;"
                             onchange="previewSlip(this)">
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;">
+                            <input type="number" id="input-slip-amount" class="input-field" placeholder="ยอดที่โอน (บาท)">
+                            <input type="date" id="input-slip-date" class="input-field" title="วันที่โอนเงิน">
+                        </div>
+                        <p style="font-size:11px; color:#64748b; margin:0 0 8px 0; line-height:1.5;">🤖 ระบบจะตรวจยอดและวันที่ให้อัตโนมัติ ถ้าตรงจะขึ้นว่าจ่ายแล้วทันที</p>
                         <img id="slip-preview" style="display:none; width:100%; border-radius:10px; margin-bottom:8px; max-height:180px; object-fit:cover;">
-                        <button onclick="uploadPaymentSlip()" 
+                        <button onclick="uploadPaymentSlip()"
                             style="width:100%; background:linear-gradient(135deg,#f59e0b,#d97706); color:white; border:none; border-radius:10px; padding:10px; font-size:13px; font-weight:700; cursor:pointer; font-family:'Sarabun',sans-serif;">
-                            📤 ส่งสลิปให้หัวตี้ตรวจ
+                            📤 ส่งสลิปให้ระบบตรวจอัตโนมัติ
                         </button>
                     </div>
                 </div>
@@ -585,7 +590,11 @@
                         <label style="font-size:11px; color:#94a3b8; display:block; margin-bottom:3px;">🏦 เลขบัญชีรับเงิน</label>
                         <input type="text" id="bill-bank" placeholder="ธ.กสิกร 012-3-45678-9 นายบ๊อกแบ๊ก" class="input-dark">
                     </div>
-                    <button onclick="triggerBillingSubmit()" 
+                    <div style="margin-top:10px;">
+                        <label style="font-size:11px; color:#94a3b8; display:block; margin-bottom:3px;">📅 วันที่รับโอนที่ถูกต้อง</label>
+                        <input type="date" id="bill-payment-date" class="input-dark">
+                    </div>
+                    <button onclick="triggerBillingSubmit()"
                         style="width:100%; margin-top:10px; background:linear-gradient(135deg,#059669,#047857); color:white; border:none; border-radius:12px; padding:11px; font-size:13px; font-weight:700; cursor:pointer; font-family:'Sarabun',sans-serif;">
                         📢 ส่งบิลเรียกเก็บเงินเข้ากลุ่ม LINE
                     </button>
@@ -851,6 +860,8 @@
                 if (isBilling) {
                     if (p.isPaid) {
                         payBadge = `<span style="background:#dcfce7; color:#16a34a; font-size:11px; font-weight:700; padding:3px 8px; border-radius:999px;">✅ จ่ายแล้ว</span>`;
+                    } else if (p.paymentStatus === 'rejected') {
+                        payBadge = `<span style="background:#ffe4e6; color:#e11d48; font-size:11px; font-weight:700; padding:3px 8px; border-radius:999px;">⚠️ ยอด/วันที่ไม่ตรง</span>`;
                     } else if (p.paymentSlipBase64) {
                         payBadge = `<div style="display:flex; gap:4px; align-items:center;">
                             <button onclick="viewSlipFrame('${p.paymentSlipBase64}')" style="font-size:11px; color:#3b82f6; background:#eff6ff; border:none; padding:3px 8px; border-radius:8px; cursor:pointer; font-family:'Sarabun',sans-serif; font-weight:600;">🖼️ ดูสลิป</button>
@@ -891,8 +902,9 @@
         const isAdmin = userId === currentMatch.creatorId;
 
         const paid = realPlayers.filter(p => p.isPaid).length;
-        const pending = realPlayers.filter(p => !p.isPaid && p.paymentSlipBase64).length;
+        const pending = realPlayers.filter(p => !p.isPaid && p.paymentSlipBase64 && p.paymentStatus !== 'rejected').length;
         const unpaid = realPlayers.filter(p => !p.isPaid && !p.paymentSlipBase64).length;
+        const rejected = realPlayers.filter(p => p.paymentStatus === 'rejected').length;
         const total = realPlayers.length;
 
         // Progress
@@ -902,7 +914,7 @@
 
         // Debt list
         const container = document.getElementById('debt-tracker-list');
-        
+
         // Summary chips
         container.innerHTML = `
             <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
@@ -915,15 +927,15 @@
                     <p style="font-size:10px; color:#64748b; margin:0;">รอตรวจ</p>
                 </div>
                 <div style="flex:1; background:#fff5f5; border:1.5px solid #fecdd3; border-radius:12px; padding:8px 12px; text-align:center;">
-                    <p style="font-size:18px; font-weight:800; color:#e11d48; margin:0;">${unpaid}</p>
-                    <p style="font-size:10px; color:#64748b; margin:0;">ยังไม่จ่าย</p>
+                    <p style="font-size:18px; font-weight:800; color:#e11d48; margin:0;">${unpaid + rejected}</p>
+                    <p style="font-size:10px; color:#64748b; margin:0;">ยังไม่จ่าย/ไม่ตรง</p>
                 </div>
             </div>
             <div id="debt-cards-list"></div>
         `;
 
         const debtList = document.getElementById('debt-cards-list');
-        
+
         // Sort: unpaid → pending → paid
         const sorted = [...realPlayers].sort((a, b) => {
             const score = p => p.isPaid ? 2 : p.paymentSlipBase64 ? 1 : 0;
@@ -934,6 +946,12 @@
             let statusClass, icon, statusText, actions = '';
             if (p.isPaid) {
                 statusClass = 'paid'; icon = '✅'; statusText = 'จ่ายแล้ว';
+            } else if (p.paymentStatus === 'rejected') {
+                statusClass = 'unpaid'; icon = '⚠️'; statusText = p.paymentRemark || 'ยอด/วันที่ไม่ตรง ให้หัวตี้ตรวจอีกที';
+                actions = `<button onclick="viewSlipFrame('${p.paymentSlipBase64}')" style="font-size:11px; color:#3b82f6; background:#eff6ff; border:none; padding:4px 10px; border-radius:8px; cursor:pointer; font-family:'Sarabun',sans-serif; font-weight:600; display:block; width:100%; margin-top:6px;">🖼️ ดูสลิปที่ส่งมา</button>`;
+                if (isAdmin) {
+                    actions += `<button onclick="approveUserPayment('${p.id}')" style="font-size:11px; color:white; background:linear-gradient(135deg,#16a34a,#059669); border:none; padding:4px 10px; border-radius:8px; cursor:pointer; font-family:'Sarabun',sans-serif; font-weight:700; display:block; width:100%; margin-top:4px;">✓ หัวตี้ยืนยันเอง</button>`;
+                }
             } else if (p.paymentSlipBase64) {
                 statusClass = 'pending'; icon = '⏳'; statusText = 'รอตรวจสลิป';
                 actions = `<button onclick="viewSlipFrame('${p.paymentSlipBase64}')" style="font-size:11px; color:#3b82f6; background:#eff6ff; border:none; padding:4px 10px; border-radius:8px; cursor:pointer; font-family:'Sarabun',sans-serif; font-weight:600; display:block; width:100%; margin-top:6px;">🖼️ ดูสลิปโอนเงิน</button>`;
@@ -1051,22 +1069,63 @@
         }
     }
 
+    function getExpectedPayment() {
+        const max = parseInt(currentMatch?.maxPlayers || 1);
+        const realCount = registrations.slice(0, max).length || 1;
+        return Number(currentMatch?.paymentPerHead || 0) || Number(((currentMatch?.billingTotal || 0) / realCount).toFixed(2));
+    }
+
+    function validateSlipMeta(amount, transferDate) {
+        const expectedAmount = getExpectedPayment();
+        const expectedDate = currentMatch?.paymentDate || currentMatch?.date;
+        const amountOk = Math.abs(Number(amount) - expectedAmount) < 0.01;
+        const dateOk = transferDate === expectedDate;
+        return { amountOk, dateOk, expectedAmount, expectedDate, isValid: amountOk && dateOk };
+    }
+
     function uploadPaymentSlip() {
         const fileInput = document.getElementById('input-slip-file');
+        const amount = parseFloat(document.getElementById('input-slip-amount').value);
+        const transferDate = document.getElementById('input-slip-date').value;
         if (!fileInput.files || fileInput.files.length === 0) {
             alert('กรุณาเลือกไฟล์สลิปก่อนครับ');
             return;
         }
+        if (!amount || !transferDate) {
+            alert('กรุณากรอกยอดโอนและวันที่โอน เพื่อให้ระบบตรวจอัตโนมัติครับ');
+            return;
+        }
+        const check = validateSlipMeta(amount, transferDate);
         const reader = new FileReader();
         reader.onloadend = async function() {
-            await db.ref(`matches/${selectedMatchId}/registrations/${userId}/paymentSlipBase64`).set(reader.result);
-            alert('📤 ส่งสลิปสำเร็จ! หัวตี้จะตรวจสอบให้เร็วๆ นี้ครับ');
+            const updates = {
+                paymentSlipBase64: reader.result,
+                paymentAmount: amount,
+                paymentDate: transferDate,
+                paymentCheckedAt: Date.now(),
+                paymentStatus: check.isValid ? 'paid' : 'rejected',
+                paymentRemark: check.isValid ? 'auto-approved' : `ยอด/วันที่ไม่ตรง (ควรเป็น ${check.expectedAmount} บาท / ${check.expectedDate})`,
+                isPaid: check.isValid
+            };
+            await db.ref(`matches/${selectedMatchId}/registrations/${userId}`).update(updates);
+            if (check.isValid) {
+                await notifySlipChecked(userId, displayName, 'paid', updates.paymentRemark);
+                alert('✅ ระบบตรวจสอบแล้วถูกต้อง ชำระเงินเรียบร้อยครับ!');
+            } else {
+                await notifySlipChecked(userId, displayName, 'rejected', updates.paymentRemark);
+                alert(`⚠️ ยอดหรือวันที่ไม่ตรง\nควรเป็น ${check.expectedAmount} บาท / วันที่ ${check.expectedDate}\nระบบแจ้งหัวตี้ให้ตรวจสอบอีกทีแล้วครับ`);
+            }
         };
         reader.readAsDataURL(fileInput.files[0]);
     }
 
     async function approveUserPayment(uId) {
-        await db.ref(`matches/${selectedMatchId}/registrations/${uId}/isPaid`).set(true);
+        await db.ref(`matches/${selectedMatchId}/registrations/${uId}`).update({
+            isPaid: true,
+            paymentStatus: 'paid',
+            paymentRemark: 'manual-approved-by-host',
+            paymentCheckedAt: Date.now()
+        });
         alert('✅ ยืนยันการชำระเงินเรียบร้อยครับ');
     }
 
@@ -1081,6 +1140,7 @@
         const courts = parseFloat(document.getElementById('bill-court-count').value) || 0;
         const balls = parseFloat(document.getElementById('bill-shuttlecock').value) || 0;
         const bank = document.getElementById('bill-bank').value.trim();
+        const paymentDate = document.getElementById('bill-payment-date').value || currentMatch.date;
 
         if (!bank) {
             alert('⚠️ กรุณากรอกเลขบัญชีรับเงินด้วยครับ');
@@ -1097,14 +1157,27 @@
 
         await db.ref(`matches/${selectedMatchId}/status`).set('billing');
         await db.ref(`matches/${selectedMatchId}/billingSummary`).set(summaryStr);
+        await db.ref(`matches/${selectedMatchId}/billingTotal`).set(finalTotal);
+        await db.ref(`matches/${selectedMatchId}/paymentPerHead`).set(Number(perHead));
+        await db.ref(`matches/${selectedMatchId}/paymentDate`).set(paymentDate);
 
         try {
             await fetch(`${CLOUD_BASE}/apiNotifyBilling`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ data: { matchId: selectedMatchId, summaryText: summaryStr, bankInfo: bank } })
+                body: JSON.stringify({ data: { matchId: selectedMatchId, summaryText: summaryStr, bankInfo: bank, paymentDate } })
             });
             alert('📢 ส่งบิลเข้ากลุ่ม LINE แล้วครับ!');
+        } catch(e) { console.error(e); }
+    }
+
+    async function notifySlipChecked(memberId, memberName, status, remark) {
+        try {
+            await fetch(`${CLOUD_BASE}/apiNotifySlipChecked`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ data: { matchId: selectedMatchId, memberId, memberName, status, remark } })
+            });
         } catch(e) { console.error(e); }
     }
 
