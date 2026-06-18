@@ -14,6 +14,110 @@ const LINE_ACCESS_TOKEN = "fgXW8VjBTGRcvHOHDMWH0edxxnb4YQ2OpIXvooT8IG3yfwvExyYyu
 const LINE_GROUP_ID = "Ce835d108875b2dbf5265af2cf5a9367b";
 const THAILAND_UTC_OFFSET = "+07:00";
 
+const LIFF_URL = "https://liff.line.me/2010400559-X4eBS5zg";
+
+async function pushLineMessage(messages) {
+    return axios.post("https://api.line.me/v2/bot/message/push", {
+        to: LINE_GROUP_ID,
+        messages
+    }, { headers: { "Content-Type": "application/json", "Authorization": `Bearer ${LINE_ACCESS_TOKEN}` } });
+}
+
+async function replyLineMessage(replyToken, messages) {
+    return axios.post("https://api.line.me/v2/bot/message/reply", {
+        replyToken,
+        messages
+    }, { headers: { "Content-Type": "application/json", "Authorization": `Bearer ${LINE_ACCESS_TOKEN}` } });
+}
+
+function getRealPlayers(match) {
+    const regData = match.registrations || {};
+    return Object.keys(regData)
+        .map(k => regData[k])
+        .sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0))
+        .slice(0, parseInt(match.maxPlayers));
+}
+
+function getMedalByRank(rank) {
+    if (rank === 1) return { key: "gold", icon: "🥇", label: "เหรียญทอง" };
+    if (rank === 2) return { key: "silver", icon: "🥈", label: "เหรียญเงิน" };
+    if (rank === 3) return { key: "bronze", icon: "🥉", label: "เหรียญทองแดง" };
+    return null;
+}
+
+function buildMedalLeaderboardText(records) {
+    const rows = Object.keys(records || {}).map(userId => {
+        const r = records[userId] || {};
+        return {
+            userId,
+            name: r.name || "ไม่ทราบชื่อ",
+            gold: Number(r.gold || 0),
+            silver: Number(r.silver || 0),
+            bronze: Number(r.bronze || 0)
+        };
+    }).sort((a, b) => (b.gold - a.gold) || (b.silver - a.silver) || (b.bronze - a.bronze) || a.name.localeCompare(b.name, 'th'));
+
+    if (rows.length === 0) return "ยังไม่มีประวัติเหรียญการจ่ายเงิน";
+    return rows.map((r, i) => `${i + 1}. ${r.name} — 🥇${r.gold} 🥈${r.silver} 🥉${r.bronze}`).join("\n");
+}
+
+async function updatePaymentRankingAndNotify(matchId, memberId, memberName, isNewPaidNotice = true) {
+    const matchSnap = await db.ref(`matches/${matchId}`).get();
+    const match = matchSnap.val();
+    if (!match) return { paidRank: null, allPaid: false };
+
+    const realPlayers = getRealPlayers(match);
+    const paidPlayers = realPlayers
+        .filter(p => p.isPaid)
+        .sort((a, b) => (a.paymentCheckedAt || Number.MAX_SAFE_INTEGER) - (b.paymentCheckedAt || Number.MAX_SAFE_INTEGER));
+
+    const ranking = paidPlayers.map((p, index) => {
+        const rank = index + 1;
+        const medal = getMedalByRank(rank);
+        return { id: p.id, name: p.name, rank, paidAt: p.paymentCheckedAt || Date.now(), medal: medal?.key || null };
+    });
+    await db.ref(`matches/${matchId}/paymentRanking`).set(ranking);
+
+    const currentRank = ranking.find(r => r.id === memberId)?.rank || null;
+    const currentMedal = getMedalByRank(currentRank);
+    const paidList = ranking.map(r => {
+        const medal = getMedalByRank(r.rank);
+        return `${r.rank}. ${medal ? medal.icon + ' ' : ''}${r.name}`;
+    }).join("\n") || "ยังไม่มีคนจ่าย";
+    const allPaid = realPlayers.length > 0 && paidPlayers.length === realPlayers.length;
+
+    if (isNewPaidNotice) {
+        const medalText = currentMedal ? `\n🏅 ได้${currentMedal.label} ลำดับที่ ${currentRank}!` : `\nลำดับการจ่าย: #${currentRank}`;
+        await pushLineMessage([{ type: "text", text: `✅ [มีคนจ่ายเงินแล้ว]\n${memberName} ชำระเงินเรียบร้อยแล้ว${medalText}\n\n📊 อันดับจ่ายเงินตี้นี้\n${paidList}\n\nคงเหลือ ${Math.max(realPlayers.length - paidPlayers.length, 0)} คน` }]);
+    }
+
+    if (allPaid && !match.paymentMedalsFinalized) {
+        const medalUpdates = {};
+        ranking.slice(0, 3).forEach(r => {
+            const medal = getMedalByRank(r.rank);
+            if (!medal) return;
+            medalUpdates[`paymentMedalRecords/${r.id}/name`] = r.name;
+            medalUpdates[`paymentMedalRecords/${r.id}/${medal.key}`] = admin.database.ServerValue.increment(1);
+            medalUpdates[`paymentMedalRecords/${r.id}/total`] = admin.database.ServerValue.increment(1);
+            medalUpdates[`paymentMedalRecords/${r.id}/history/${matchId}`] = {
+                matchId, location: match.location || '', date: match.date || '', rank: r.rank, medal: medal.key, medalLabel: medal.label, awardedAt: Date.now()
+            };
+        });
+        medalUpdates[`matches/${matchId}/paymentMedalsFinalized`] = true;
+        await db.ref().update(medalUpdates);
+
+        const recordsSnap = await db.ref('paymentMedalRecords').get();
+        const leaderboard = buildMedalLeaderboardText(recordsSnap.val() || {});
+        const finalText = ranking.map(r => {
+            const medal = getMedalByRank(r.rank);
+            return `${r.rank}. ${medal ? medal.icon + ' ' : ''}${r.name}`;
+        }).join("\n");
+        await pushLineMessage([{ type: "text", text: `🎉 [จ่ายครบทุกคนแล้ว!]\nตี้: ${match.location || '-'} ${match.time || ''}-${match.endTime || ''} น.\n\n🏁 สรุปอันดับการจ่ายเงินตี้นี้\n${finalText}\n\n🏆 สรุปอันดับรวมเหรียญการจ่ายเงิน\n${leaderboard}` }]);
+    }
+
+    return { paidRank: currentRank, allPaid };
+}
+
 function getMatchDateTime(match) {
     return new Date(`${match.date}T${match.time}:00${THAILAND_UTC_OFFSET}`);
 }
@@ -296,20 +400,18 @@ exports.apiNotifySlipChecked = functions.https.onRequest(async (req, res) => {
     const dataObj = req.body.data;
     if (!dataObj) return res.status(400).send("ไม่มีข้อมูล");
 
-    const { matchId, memberName, status, remark } = dataObj;
+    const { matchId, memberId, memberName, status, remark } = dataObj;
     const isPaid = status === 'paid';
     const textMsg = isPaid
-        ? `✅ [ชำระเงินแล้ว]
-${memberName} ชำระเงินเรียบร้อย ระบบตรวจยอดและวันที่ถูกต้องแล้วจ้า 🧾✨`
-        : `⚠️ [สลิปต้องตรวจสอบอีกที]
-${memberName} ส่งสลิปแล้ว แต่${remark || 'ยอด/วันที่ไม่ตรง'}
-รบกวนหัวตี้ตรวจสอบอีกครั้งนะครับ`;
+        ? `✅ [ชำระเงินแล้ว]\n${memberName} ชำระเงินเรียบร้อย ระบบตรวจยอดและวันที่ถูกต้องแล้วจ้า 🧾✨`
+        : `⚠️ [สลิปต้องตรวจสอบอีกที]\n${memberName} ส่งสลิปแล้ว แต่${remark || 'ยอด/วันที่ไม่ตรง'}\nรบกวนหัวตี้ตรวจสอบอีกครั้งนะครับ`;
 
     try {
-        await axios.post("https://api.line.me/v2/bot/message/push", {
-            to: LINE_GROUP_ID,
-            messages: [{ type: "text", text: `${textMsg}\n\nเปิดหน้าตี้: https://liff.line.me/2010400559-X4eBS5zg?matchId=${matchId}` }]
-        }, { headers: { "Content-Type": "application/json", "Authorization": `Bearer ${LINE_ACCESS_TOKEN}` } });
+        if (isPaid && memberId) {
+            await updatePaymentRankingAndNotify(matchId, memberId, memberName, true);
+        } else {
+            await pushLineMessage([{ type: "text", text: `${textMsg}\n\nเปิดหน้าตี้: ${LIFF_URL}?matchId=${matchId}` }]);
+        }
         return res.status(200).send({ data: { success: true } });
     } catch (error) {
         console.error(error);
@@ -348,4 +450,55 @@ exports.remindUnpaidEvery6Hours = onSchedule("every 6 hours", async (event) => {
             console.error("แจ้งเตือนค้างชำระพัง Match:", key, error);
         }
     }
+});
+
+
+// ============================
+// 🤖 8. LINE Webhook: เรียกบอทด้วยคำว่า "บ๊อกแบ๊ก"
+// ============================
+exports.lineWebhook = functions.https.onRequest(async (req, res) => {
+    if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
+
+    const events = req.body.events || [];
+    await Promise.all(events.map(async (event) => {
+        if (!event.replyToken) return;
+        const text = event.message?.type === 'text' ? (event.message.text || '').trim() : '';
+
+        if (text === 'บ๊อกแบ๊ก') {
+            return replyLineMessage(event.replyToken, [{
+                type: 'text',
+                text: 'บ๊อกแบ๊กมาแล้วครับ 🐾 อยากทำอะไรต่อ?',
+                quickReply: {
+                    items: [
+                        { type: 'action', action: { type: 'uri', label: 'สร้างตี้', uri: LIFF_URL } },
+                        { type: 'action', action: { type: 'postback', label: 'จ่ายเงิน', data: 'action=payment_menu', displayText: 'จ่ายเงิน' } }
+                    ]
+                }
+            }]);
+        }
+
+        if (event.type === 'postback' && event.postback?.data === 'action=payment_menu') {
+            const snapshot = await db.ref('matches').get();
+            const matches = snapshot.val() || {};
+            const billingMatches = Object.keys(matches)
+                .map(id => ({ id, ...matches[id] }))
+                .filter(m => m.status === 'billing')
+                .sort((a, b) => (b.billingSentAt || 0) - (a.billingSentAt || 0))
+                .slice(0, 10);
+
+            if (billingMatches.length === 0) {
+                return replyLineMessage(event.replyToken, [{ type: 'text', text: 'ตอนนี้ยังไม่มีตี้ที่เรียกเก็บเงินครับ 🏸' }]);
+            }
+
+            const messages = billingMatches.map((m, i) => {
+                const amount = m.paymentPerHead ? `${m.paymentPerHead} บาท` : '-';
+                const bank = m.bankInfo || 'หัวตี้ยังไม่ได้ระบุเลขบัญชี';
+                return `${i + 1}. ${m.location || '-'} ${m.time || ''}-${m.endTime || ''} น.\n👑 หัวตี้: ${m.creatorName || '-'}\n💸 ยอด: ${amount}\n🏦 บัญชี: ${bank}\n👉 ${LIFF_URL}?matchId=${m.id}`;
+            }).join('\n\n');
+
+            return replyLineMessage(event.replyToken, [{ type: 'text', text: `เลือกตี้ที่ต้องการจ่ายเงินได้เลยครับ\n\n${messages}` }]);
+        }
+    }));
+
+    return res.status(200).send('OK');
 });
