@@ -509,6 +509,7 @@
                 </div>
                 <div id="pay-progress-label" style="font-size:12px; color:#64748b; text-align:center; margin-bottom:14px; margin-top:-10px;"></div>
                 <div id="debt-tracker-list"></div>
+                <div id="payment-ranking-list" style="margin-top:14px;"></div>
             </div>
         </div>
 
@@ -956,6 +957,8 @@
             return score(a) - score(b);
         });
 
+        renderPaymentRanking(realPlayers);
+
         debtList.innerHTML = sorted.map(p => {
             let statusClass, icon, statusText, actions = '';
             if (p.isPaid) {
@@ -988,6 +991,33 @@
                 </div>
             </div>`;
         }).join('');
+    }
+
+    function renderPaymentRanking(realPlayers) {
+        const ranking = currentMatch.paymentRanking || [];
+        const rankingBox = document.getElementById('payment-ranking-list');
+        if (!rankingBox) return;
+
+        const medalRecords = currentMatch.paymentMedalsFinalized ? 'จบตี้นี้และบันทึกเหรียญแล้ว' : 'จ่ายครบเมื่อไร ระบบจะบันทึกเหรียญ 1-3 ให้อัตโนมัติ';
+        const rows = ranking.length > 0
+            ? ranking.map(r => {
+                const medal = r.rank === 1 ? '🥇' : r.rank === 2 ? '🥈' : r.rank === 3 ? '🥉' : '🏁';
+                return `<div style="display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid #f1f5f9;">
+                    <span style="font-size:20px; width:28px; text-align:center;">${medal}</span>
+                    <span style="flex:1; font-size:13px; font-weight:700; color:#1e293b;">#${r.rank} ${r.name}</span>
+                </div>`;
+            }).join('')
+            : '<p style="font-size:12px; color:#94a3b8; text-align:center; padding:10px 0;">ยังไม่มีอันดับการจ่ายเงิน</p>';
+
+        rankingBox.innerHTML = `
+            <div style="border-top:1px dashed #e2e8f0; padding-top:12px;">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+                    <p style="font-size:13px; font-weight:800; color:#1e293b; margin:0;">🏆 อันดับการจ่ายเงิน</p>
+                    <span style="font-size:10px; color:#64748b; background:#f8fafc; padding:3px 8px; border-radius:999px;">${ranking.length}/${realPlayers.length}</span>
+                </div>
+                ${rows}
+                <p style="font-size:11px; color:#64748b; margin:8px 0 0 0; line-height:1.5;">${medalRecords}</p>
+            </div>`;
     }
 
     // ========== ACTIONS ==========
@@ -1139,12 +1169,14 @@
     }
 
     async function approveUserPayment(uId) {
+        const player = registrations.find(p => p.id === uId);
         await db.ref(`matches/${selectedMatchId}/registrations/${uId}`).update({
             isPaid: true,
             paymentStatus: 'paid',
             paymentRemark: 'manual-approved-by-host',
             paymentCheckedAt: Date.now()
         });
+        if (player) await notifySlipChecked(uId, player.name, 'paid', 'manual-approved-by-host');
         alert('✅ ยืนยันการชำระเงินเรียบร้อยครับ');
     }
 
@@ -1180,6 +1212,7 @@
         await db.ref(`matches/${selectedMatchId}/billingSummary`).set(summaryStr);
         await db.ref(`matches/${selectedMatchId}/billingTotal`).set(finalTotal);
         await db.ref(`matches/${selectedMatchId}/paymentPerHead`).set(Number(perHead));
+        await db.ref(`matches/${selectedMatchId}/bankInfo`).set(bank);
         await db.ref(`matches/${selectedMatchId}/paymentDate`).set(paymentDate);
         await db.ref(`matches/${selectedMatchId}/billingSentAt`).set(billingSentAt);
         try {
